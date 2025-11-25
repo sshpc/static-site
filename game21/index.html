@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>21点游戏</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f8ff;
+            text-align: center;
+        }
+        .game-container {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .game-container.game-over {
+            background-color: #ffe6e6;
+            border: 2px solid #ff6b6b;
+            animation: gameOverPulse 1.5s ease-in-out;
+        }
+        @keyframes gameOverPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            25%, 75% { opacity: 0.8; transform: scale(0.98); }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+        .score-board {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .cards-container {
+            display: flex;
+            justify-content: space-around;
+            margin: 30px 0;
+        }
+        .player-cards, .dealer-cards {
+            text-align: center;
+        }
+        .cards {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .card {
+            width: 60px;
+            height: 90px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 5px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        /* 爆牌动画效果 */
+        @keyframes bustAnimation {
+            0% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.2) rotate(10deg); border-color: red; }
+            50% { transform: scale(1.1) rotate(-10deg); background-color: #fff5f5; }
+            75% { transform: scale(1.2) rotate(5deg); border-color: #ff6b6b; }
+            100% { transform: scale(1) rotate(0deg); border-color: red; background-color: #ffe6e6; }
+        }
+        .bust-effect {
+            animation: bustAnimation 0.5s ease-in-out;
+            border-color: red;
+            background-color: #ffe6e6;
+        }
+        .card-back {
+            background-color: #1e90ff;
+            color: white;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        button:nth-child(2) {
+            background-color: #f44336;
+        }
+        .bet-section {
+            margin-top: 10px;
+        }
+        .bet-buttons {
+            margin-top: 10px;
+        }
+        .bet-btn {
+            padding: 8px 15px;
+            font-size: 14px;
+            margin: 0 5px;
+            background-color: #2196F3;
+        }
+        .bet-btn.active {
+            background-color: #FF9800;
+            font-weight: bold;
+        }
+        .bet-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .message {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0;
+            min-height: 30px;
+        }
+        .bust {
+            color: red;
+        }
+        .win {
+            color: green;
+        }
+        .loss {
+            color: red;
+        }
+        .draw {
+            color: orange;
+        }
+        
+        /* 游戏说明样式 */
+        .game-instructions {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            text-align: left;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .game-instructions h3 {
+            margin-top: 0;
+            color: #333;
+            text-align: center;
+        }
+        .game-instructions ul {
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .game-instructions li {
+            margin-bottom: 8px;
+        }
+        .game-instructions strong {
+            color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>21点游戏</h1>
+        <div class="score-board">
+            <p>积分: <span id="score">100</span></p>
+            <div class="bet-section">
+                <p>当前押注: <span id="current-bet">5</span>分</p>
+                <div class="bet-buttons">
+                    <button class="bet-btn" data-bet="5">5分</button>
+                    <button class="bet-btn" data-bet="10">10分</button>
+                    <button class="bet-btn" data-bet="20">20分</button>
+                    <button class="bet-btn" data-bet="50">50分</button>
+                    <button class="bet-btn" data-bet="100">100分</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="cards-container">
+            <div class="dealer-cards">
+                <h3>庄家</h3>
+                <div id="dealer-cards" class="cards"></div>
+                <p>点数: <span id="dealer-score">?</span></p>
+            </div>
+            
+            <div class="player-cards">
+                <h3>玩家</h3>
+                <div id="player-cards" class="cards"></div>
+                <p>点数: <span id="player-score">0</span></p>
+            </div>
+        </div>
+        
+        <div class="message" id="message"></div>
+        
+        <div class="controls">
+            <button id="hit-btn">要牌</button>
+            <button id="stand-btn">停牌</button>
+            <button id="start-btn">开始</button>
+        </div>
+    </div>
+
+    <script>
+        // 定义游戏类
+        class BlackjackGame {
+            constructor() {
+                this.deck = [];
+                this.playerCards = [];
+                this.dealerCards = [];
+                this.score = 100;
+                this.bet = 5;
+                this.gameActive = false;
+                this.timeoutIds = []; // 存储定时器ID，用于清理内存
+                this.initialCardsCount = 2; // 初始牌数量
+                this.extraCardsCount = 0; // 额外要的牌数量
+                
+                this.initializeElements();
+                this.setupEventListeners();
+                this.updateScoreDisplay();
+            }
+            
+            initializeElements() {
+                this.hitBtn = document.getElementById('hit-btn');
+                this.standBtn = document.getElementById('stand-btn');
+                this.startBtn = document.getElementById('start-btn');
+                this.messageEl = document.getElementById('message');
+                this.playerCardsEl = document.getElementById('player-cards');
+                this.dealerCardsEl = document.getElementById('dealer-cards');
+                this.playerScoreEl = document.getElementById('player-score');
+                this.dealerScoreEl = document.getElementById('dealer-score');
+                this.scoreEl = document.getElementById('score');
+                this.currentBetEl = document.getElementById('current-bet');
+                this.betButtons = document.querySelectorAll('.bet-btn');
+            }
+            
+            setupEventListeners() {
+                this.hitBtn.addEventListener('click', () => this.hit());
+                this.standBtn.addEventListener('click', () => this.stand());
+                this.startBtn.addEventListener('click', () => this.startGame());
+                
+                // 添加押注按钮事件监听器
+                this.betButtons.forEach(button => {
+                    button.addEventListener('click', () => this.setBet(parseInt(button.dataset.bet)));
+                });
+            }
+            
+            clearTimers() {
+                // 清理所有定时器，防止内存泄漏
+                this.timeoutIds.forEach(id => clearTimeout(id));
+                this.timeoutIds = [];
+            }
+            
+            createDeck() {
+                const suits = ['♠', '♥', '♦', '♣'];
+                const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+                this.deck = [];
+                
+                for (let suit of suits) {
+                    for (let value of values) {
+                        this.deck.push({ suit, value });
+                    }
+                }
+                
+                // 洗牌
+                for (let i = this.deck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
+                }
+            }
+            
+            dealCard() {
+                return this.deck.pop();
+            }
+            
+            getCardValue(card) {
+                if (card.value === 'A') return 11;
+                if (['J', 'Q', 'K'].includes(card.value)) return 10;
+                return parseInt(card.value);
+            }
+            
+            calculateScore(cards) {
+                let score = 0;
+                let aces = 0;
+                
+                for (let card of cards) {
+                    if (card.value === 'A') {
+                        aces++;
+                        score += 11;
+                    } else {
+                        score += this.getCardValue(card);
+                    }
+                }
+                
+                // 处理A的值（11或1）
+                while (score > 21 && aces > 0) {
+                    score -= 10;
+                    aces--;
+                }
+                
+                return score;
+            }
+            
+            displayCards(cards, element, hideFirst = false) {
+                element.innerHTML = '';
+                cards.forEach((card, index) => {
+                    const cardEl = document.createElement('div');
+                    cardEl.className = 'card';
+                    
+                    if (hideFirst && index === 0) {
+                        cardEl.classList.add('card-back');
+                        cardEl.textContent = '?';
+                    } else {
+                        cardEl.textContent = `${card.value}${card.suit}`;
+                        // 设置牌的颜色
+                        if (card.suit === '♥' || card.suit === '♦') {
+                            cardEl.style.color = 'red';
+                        }
+                    }
+                    
+                    element.appendChild(cardEl);
+                });
+            }
+            
+            updateScoreDisplay() {
+                this.scoreEl.textContent = this.score;
+                
+                // 当积分低于5分时，高亮显示为红色
+                if (this.score < 5) {
+                    this.scoreEl.style.color = '#ff6b6b';
+                    this.scoreEl.style.fontWeight = 'bold';
+                    this.scoreEl.style.fontSize = '1.2em';
+                } else {
+                    this.scoreEl.style.color = '';
+                    this.scoreEl.style.fontWeight = '';
+                    this.scoreEl.style.fontSize = '';
+                }
+                
+                // 更新当前押注显示
+                if (this.currentBetEl) {
+                    this.currentBetEl.textContent = this.bet;
+                }
+                
+                // 更新押注按钮状态
+                if (this.betButtons) {
+                    this.betButtons.forEach(button => {
+                        const betValue = parseInt(button.dataset.bet);
+                        button.disabled = this.gameActive || betValue > this.score || this.score < 5;
+                        
+                        // 设置激活状态 - 高亮显示当前选中的押注金额
+                        if (betValue === this.bet) {
+                            button.classList.add('active');
+                        } else {
+                            button.classList.remove('active');
+                        }
+                    });
+                }
+                
+                // 更新按钮状态
+                this.startBtn.disabled = this.gameActive || (this.score >= 5 && this.score < this.bet);
+            }
+            
+            /**
+             * 设置押注金额
+             * @param {number} bet - 押注金额
+             */
+            setBet(bet) {
+                if (this.gameActive || bet > this.score) return;
+                
+                this.bet = bet;
+                this.updateScoreDisplay();
+            }
+            
+            /**
+             * 触发爆牌特效动画
+             * @param {HTMLElement} container - 要添加特效的卡片容器
+             */
+            triggerBustEffect(container) {
+                const cards = container.querySelectorAll('.card');
+                cards.forEach(card => {
+                    // 添加爆牌特效类
+                    card.classList.add('bust-effect');
+                    // 动画结束后移除特效类，以便下次可以再次触发
+                    setTimeout(() => {
+                        card.classList.remove('bust-effect');
+                    }, 500);
+                });
+            }
+            
+            startGame() {
+                // 先检查积分是否不足5分，如果是则重置游戏
+                if (this.score < 5) {
+                    this.resetGame();
+                    return;
+                }
+                
+                // 检查积分是否足够
+                if (this.score < this.bet) {
+                    this.messageEl.textContent = '积分不足，无法开始游戏！';
+                    return;
+                }
+                
+                // 扣除当前押注
+                this.score -= this.bet;
+                this.updateScoreDisplay();
+                
+                this.clearTimers(); // 清理之前的定时器
+                this.createDeck();
+                this.playerCards = [this.dealCard(), this.dealCard()];
+                this.dealerCards = [this.dealCard(), this.dealCard()];
+                
+                // 重置额外要牌计数
+                this.extraCardsCount = 0;
+                
+                this.gameActive = true;
+                this.hitBtn.disabled = false;
+                this.standBtn.disabled = false;
+                
+                // 禁用押注按钮
+                this.betButtons.forEach(button => {
+                    button.disabled = true;
+                });
+                
+                this.displayCards(this.playerCards, this.playerCardsEl);
+                this.displayCards(this.dealerCards, this.dealerCardsEl, true); // 隐藏庄家第一张牌
+                
+                const playerScore = this.calculateScore(this.playerCards);
+                this.playerScoreEl.textContent = playerScore;
+                this.dealerScoreEl.textContent = '?';
+                
+                this.messageEl.textContent = '';
+                this.messageEl.className = 'message';
+                
+                // 检查是否立即结束游戏（黑杰克）
+                if (playerScore === 21) {
+                    this.stand();
+                }
+            }
+            
+            /**
+             * 重置游戏状态
+             */
+            resetGame() {
+                this.clearTimers(); // 开始新游戏前清理定时器
+                
+                // 移除游戏结束效果
+                const container = document.querySelector('.game-container');
+                container.classList.remove('game-over');
+                
+                // 重置消息样式
+                this.messageEl.style.visibility = 'visible';
+                this.messageEl.textContent = '';
+                this.messageEl.className = 'message';
+                
+                // 重置积分
+                this.score = 100; // 重置积分
+                this.scoreEl.style.color = '';
+                this.scoreEl.style.fontWeight = '';
+                this.scoreEl.style.fontSize = '';
+                this.bet = 5; // 重置押注为默认的5分
+                
+                // 清空卡片显示
+                this.playerCardsEl.innerHTML = '';
+                this.dealerCardsEl.innerHTML = '';
+                this.playerScoreEl.textContent = '0';
+                this.dealerScoreEl.textContent = '?';
+                
+                this.gameActive = false;
+                this.hitBtn.disabled = true;
+                this.standBtn.disabled = true;
+                
+                this.updateScoreDisplay();
+            }
+            
+            hit() {
+                if (!this.gameActive) return;
+                
+                this.playerCards.push(this.dealCard());
+                // 增加额外要牌计数
+                this.extraCardsCount++;
+                this.displayCards(this.playerCards, this.playerCardsEl);
+                
+                const playerScore = this.calculateScore(this.playerCards);
+                this.playerScoreEl.textContent = playerScore;
+                
+                if (playerScore > 21) {
+                    // 触发爆牌特效
+                    this.triggerBustEffect(this.playerCardsEl);
+                    this.messageEl.textContent = '爆牌！你输了！';
+                    this.messageEl.className = 'message bust';
+                    // 延迟结束游戏，让动画有时间播放
+                    setTimeout(() => {
+                        this.endGame(false, true); // 标记为爆牌
+                    }, 500);
+                }
+            }
+            
+            stand() {
+                if (!this.gameActive) return;
+                
+                this.gameActive = false;
+                this.hitBtn.disabled = true;
+                this.standBtn.disabled = true;
+                
+                // 显示庄家的隐藏牌
+                this.displayCards(this.dealerCards, this.dealerCardsEl);
+                
+                let dealerScore = this.calculateScore(this.dealerCards);
+                this.dealerScoreEl.textContent = dealerScore;
+                
+                // 庄家必须在17点以下要牌
+                this.playDealerTurn(dealerScore);
+            }
+            
+            playDealerTurn(dealerScore) {
+                if (dealerScore < 17) {
+                    // 庄家要牌
+                    setTimeout(() => {
+                        this.dealerCards.push(this.dealCard());
+                        this.displayCards(this.dealerCards, this.dealerCardsEl);
+                        const newDealerScore = this.calculateScore(this.dealerCards);
+                        this.dealerScoreEl.textContent = newDealerScore;
+                        this.playDealerTurn(newDealerScore); // 递归调用直到庄家停止要牌
+                    }, 500);
+                } else {
+                    // 庄家停止要牌，决定胜负
+                    this.determineWinner();
+                }
+            }
+            
+            determineWinner() {
+                const playerScore = this.calculateScore(this.playerCards);
+                const dealerScore = this.calculateScore(this.dealerCards);
+                
+                if (playerScore > 21) {
+                    // 触发爆牌特效
+                    this.triggerBustEffect(this.playerCardsEl);
+                    this.messageEl.textContent = '爆牌！你输了！';
+                    this.messageEl.className = 'message loss';
+                    // 延迟结束游戏，让动画有时间播放
+                    setTimeout(() => {
+                        this.endGame(false, true); // 标记为爆牌
+                    }, 500);
+                } else if (dealerScore > 21) {
+                    // 触发庄家爆牌特效
+                    this.triggerBustEffect(this.dealerCardsEl);
+                    this.messageEl.textContent = '庄家爆牌！你赢了！';
+                    this.messageEl.className = 'message win';
+                    // 延迟结束游戏，让动画有时间播放
+                    setTimeout(() => {
+                        this.endGame(true);
+                    }, 500);
+                } else if (playerScore > dealerScore) {
+                    this.messageEl.textContent = '你赢了！';
+                    this.messageEl.className = 'message win';
+                    this.endGame(true);
+                } else if (dealerScore > playerScore) {
+                    this.messageEl.textContent = '你输了！';
+                    this.messageEl.className = 'message loss';
+                    this.endGame(false);
+                } else {
+                    this.messageEl.textContent = '平局！';
+                    this.messageEl.className = 'message draw';
+                    this.endGame(null); // 平局
+                }
+            }
+            
+            /**
+             * 计算积分倍数 - 基于要的牌数量
+             * @returns {number} 积分倍数
+             */
+            calculateMultiplier() {
+                // 基础倍数为1
+                let multiplier = 1;
+                
+                // 每要一张额外的牌，倍数增加0.5倍
+                // 例如：要1张额外牌，倍数为1.5；要2张，倍数为2.0，以此类推
+                if (this.extraCardsCount > 0) {
+                    multiplier = 1 + (this.extraCardsCount * 0.5);
+                }
+                
+                return multiplier;
+            }
+            
+            endGame(playerWon, isBust = false) {
+                this.gameActive = false;
+                this.hitBtn.disabled = true;
+                this.standBtn.disabled = true;
+                
+                // 计算积分倍数
+                const multiplier = this.calculateMultiplier();
+                
+                if (playerWon === true) {
+                    // 赢了根据倍数增加积分和返还押注
+                    const pointsToAdd = Math.round(this.bet * multiplier);
+                    this.score += pointsToAdd + this.bet;
+                    // 在消息中显示获得的积分和倍数
+                    this.messageEl.textContent += ` 获得 ${pointsToAdd} 分 (倍数: ${multiplier}x)!`;
+                } else if (playerWon === false) {
+                    // 如果是爆牌，根据倍数扣除积分（已扣除押注）
+                    if (isBust) {
+                        const pointsToDeduct = Math.round(this.bet * multiplier);
+                        this.score -= pointsToDeduct;
+                        // 在消息中显示扣除的积分和倍数
+                        this.messageEl.textContent += ` 扣除 ${pointsToDeduct} 分 (爆牌倍数: ${multiplier}x)!`;
+                    }
+                    // 输牌已在开始时扣除押注
+                } else if (playerWon === null) {
+                    // 平局返还押注
+                    this.score += this.bet;
+                }
+                
+                // 确保积分不会变成负数
+                if (this.score < 0) {
+                    this.score = 0;
+                }
+                
+                this.updateScoreDisplay();
+                
+                // 检查游戏是否结束（积分不足）
+                if (this.score < 5) {
+                    this.messageEl.textContent = '游戏失败！您的积分不足5分！';
+                    this.messageEl.className = 'message bust';
+                    this.triggerGameOverEffect();
+                }
+            }
+            
+            /**
+             * 触发游戏结束特效
+             */
+            triggerGameOverEffect() {
+                const container = document.querySelector('.game-container');
+                // 添加游戏结束动画类
+                container.classList.add('game-over');
+                
+                // 禁用所有按钮
+                this.disableAllButtons();
+                
+                // 闪烁效果文本
+                this.flashMessage();
+            }
+            
+            /**
+             * 禁用所有游戏按钮
+             */
+            disableAllButtons() {
+                this.hitBtn.disabled = true;
+                this.standBtn.disabled = true;
+                
+                // 禁用押注按钮
+                this.betButtons.forEach(button => {
+                    button.disabled = true;
+                });
+                
+                // 开始按钮保持启用，允许重置游戏
+                this.startBtn.disabled = false;
+            }
+            
+            /**
+             * 闪烁消息文本，增强失败提示
+             */
+            flashMessage() {
+                let flashCount = 0;
+                const flashInterval = setInterval(() => {
+                    this.messageEl.style.visibility = this.messageEl.style.visibility === 'hidden' ? 'visible' : 'hidden';
+                    flashCount++;
+                    if (flashCount >= 8) {
+                        clearInterval(flashInterval);
+                        this.messageEl.style.visibility = 'visible';
+                    }
+                }, 300);
+            }
+            
+            // 合并到resetGame方法
+        }
+        
+        // 页面加载完成后初始化游戏
+        document.addEventListener('DOMContentLoaded', () => {
+            const game = new BlackjackGame();
+            // 初始化时不自动开始游戏
+            game.hitBtn.disabled = true;
+            game.standBtn.disabled = true;
+            game.startBtn.disabled = false;
+            
+            // 默认高亮显示5分押注按钮
+            const bet5Btn = document.querySelector('.bet-btn[data-bet="5"]');
+            if (bet5Btn) {
+                bet5Btn.classList.add('active');
+            }
+            
+            game.messageEl.textContent = '请选择押注金额，然后点击开始';
+        });
+    </script>
+    
+    <div class="game-instructions">
+        <h3>游戏玩法说明</h3>
+        <ul>
+            <li><strong>游戏目标：</strong>尽可能让你的牌点数接近21点，但不要超过21点。超过21点即为爆牌。</li>
+            <li><strong>押注操作：</strong>在开始游戏前，选择5分、10分、20分、50分或100分的押注额度。</li>
+            <li><strong>游戏流程：</strong>
+                <ul>
+                    <li>点击「新游戏」开始一局游戏。</li>
+                    <li>选择「要牌」获取一张新牌，或选择「停牌」结束你的回合。</li>
+                    <li>庄家会自动根据规则进行游戏。</li>
+                </ul>
+            </li>
+            <li><strong>点数计算：</strong>
+                <ul>
+                    <li>J、Q、K 各算10点。</li>
+                    <li>A 可以算1点或11点，系统会自动选择最优值。</li>
+                    <li>其他牌按牌面数字计算。</li>
+                </ul>
+            </li>
+            <li><strong>特殊规则：</strong>
+                <ul>
+                    <li><strong>积分倍数：</strong>你要的牌越多，最后赢得的积分倍数就越高（每多要1张牌增加0.5倍）。</li>
+                    <li><strong>爆牌惩罚：</strong>如果你爆牌，将根据你要的牌数量倍增扣除积分。</li>
+                    <li><strong>失败条件：</strong>当你的积分低于5分时，游戏将结束，此时需要点击「新游戏」重置积分重新开始。</li>
+                </ul>
+            </li>
+            <li><strong>胜利条件：</strong>如果你的点数大于庄家且不超过21，或者庄家爆牌而你没有爆牌，你就赢了这局游戏。</li>
+        </ul>
+    </div>
+</body>
+</html>

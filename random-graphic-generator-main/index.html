@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>随机图形散列生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            background-color: #f0f0f0;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 10px;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 10px;
+            background-color: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        .timer-controls {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        
+        .timer-controls input, .timer-controls select {
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+        }
+        
+        .info {
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .status {
+            text-align: center;
+            margin: 5px 0;
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 随机图形散列生成器</h1>
+            
+            <div class="controls">
+                <button id="generateBtn">生成新图形</button>
+                <button id="downloadBtn">下载图像</button>
+                <button id="changeColorBtn">换颜色方案</button>
+                <button id="changeShapeBtn">换图形类型</button>
+            </div>
+            
+            <div class="timer-controls">
+                <label>定时生成间隔(秒):</label>
+                <input type="number" id="intervalInput" min="0.1" max="10" value="0.1" step="0.1">
+                <select id="autoModeSelect">
+                    <option value="shapes">仅切换图形类型</option>
+                    <option value="colors">仅切换颜色方案</option>
+                    <option value="all">随机切换图形和颜色</option>
+                    <option value="none">关闭自动模式</option>
+                </select>
+                <button id="startTimerBtn">开始自动</button>
+                <button id="stopTimerBtn">停止自动</button>
+            </div>
+            
+            <div class="status" id="statusText">自动模式: 已停止</div>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+        </div>
+        
+        <div class="info">
+            <p>点击"生成新图形"创建随机图形 | 每次生成都有不同的形状、颜色和位置</p>
+            <p>使用定时器功能可实现自动切换图形 | 可选择不同的自动模式</p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const generateBtn = document.getElementById('generateBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const changeColorBtn = document.getElementById('changeColorBtn');
+        const changeShapeBtn = document.getElementById('changeShapeBtn');
+        const intervalInput = document.getElementById('intervalInput');
+        const autoModeSelect = document.getElementById('autoModeSelect');
+        const startTimerBtn = document.getElementById('startTimerBtn');
+        const stopTimerBtn = document.getElementById('stopTimerBtn');
+        const statusText = document.getElementById('statusText');
+        
+        // 颜色方案数组
+        const colorSchemes = [
+            ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFBE0B', '#FB5607'],
+            ['#8338EC', '#3A86FF', '#329F5B', '#FF006E', '#8AC926'],
+            ['#F15BB5', '#FEE440', '#00BBF9', '#00F5D4', '#9B5DE5'],
+            ['#EF233C', '#FFD60A', '#80FFDB', '#0077B6', '#03045E'],
+            ['#9D4EDD', '#FF9E00', '#FF5400', '#7209B7', '#F15BB5']
+        ];
+        
+        // 当前使用的颜色方案
+        let currentColorScheme = 0;
+        
+        // 图形类型
+        const shapeTypes = ['circle', 'rectangle', 'triangle', 'star', 'polygon'];
+        let currentShapeType = 0;
+        
+        // 定时器变量
+        let timerInterval = null;
+        
+        // 初始化画布尺寸
+        function initCanvas() {
+            const container = canvas.parentElement;
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width - 20; // 留出一些边距
+            canvas.height = rect.height - 20; // 留出一些边距
+            drawRandomShapes();
+        }
+        
+        // 窗口大小改变时重新调整画布
+        window.addEventListener('resize', initCanvas);
+        
+        // 生成随机颜色
+        function getRandomColor() {
+            const scheme = colorSchemes[currentColorScheme];
+            return scheme[Math.floor(Math.random() * scheme.length)];
+        }
+        
+        // 生成随机整数
+        function randomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        
+        // 生成随机浮点数
+        function randomFloat(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+        
+        // 绘制圆形
+        function drawCircle(x, y, radius, color) {
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+        
+        // 绘制矩形
+        function drawRectangle(x, y, width, height, color) {
+            ctx.beginPath();
+            ctx.rect(x, y, width, height);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+        
+        // 绘制三角形
+        function drawTriangle(x, y, size, color) {
+            ctx.beginPath();
+            ctx.moveTo(x, y - size/2);
+            ctx.lineTo(x + size/2, y + size/2);
+            ctx.lineTo(x - size/2, y + size/2);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+        
+        // 绘制星形
+        function drawStar(cx, cy, spikes, outerRadius, innerRadius, color) {
+            let rot = Math.PI / 2 * 3;
+            let x = cx;
+            let y = cy;
+            let step = Math.PI / spikes;
+            
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - outerRadius);
+            
+            for (let i = 0; i < spikes; i++) {
+                x = cx + Math.cos(rot) * outerRadius;
+                y = cy + Math.sin(rot) * outerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+                
+                x = cx + Math.cos(rot) * innerRadius;
+                y = cy + Math.sin(rot) * innerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+            }
+            
+            ctx.lineTo(cx, cy - outerRadius);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+        
+        // 绘制多边形
+        function drawPolygon(x, y, sides, radius, color) {
+            ctx.beginPath();
+            const angle = (Math.PI * 2) / sides;
+            
+            for (let i = 0; i < sides; i++) {
+                const px = x + radius * Math.cos(i * angle);
+                const py = y + radius * Math.sin(i * angle);
+                
+                if (i === 0) {
+                    ctx.moveTo(px, py);
+                } else {
+                    ctx.lineTo(px, py);
+                }
+            }
+            
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+        
+        // 绘制随机图形
+        function drawRandomShapes() {
+            // 清空画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 设置背景
+            const bgColor = '#F8F9FA';
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 根据画布尺寸调整图形数量和大小
+            const shapeCount = Math.floor((canvas.width * canvas.height) / 8000); // 根据画布面积调整图形数量
+            const maxShapeSize = Math.min(canvas.width, canvas.height) / 10; // 最大图形尺寸
+            
+            for (let i = 0; i < shapeCount; i++) {
+                // 随机位置
+                const x = randomInt(20, canvas.width - 20);
+                const y = randomInt(20, canvas.height - 20);
+                
+                // 随机大小（根据画布尺寸自适应）
+                const size = randomInt(10, maxShapeSize);
+                
+                // 随机颜色
+                const color = getRandomColor();
+                
+                // 根据当前图形类型绘制
+                switch (shapeTypes[currentShapeType]) {
+                    case 'circle':
+                        drawCircle(x, y, size/2, color);
+                        break;
+                    case 'rectangle':
+                        drawRectangle(x - size/2, y - size/2, size, size, color);
+                        break;
+                    case 'triangle':
+                        drawTriangle(x, y, size, color);
+                        break;
+                    case 'star':
+                        drawStar(x, y, randomInt(5, 8), size/2, size/4, color);
+                        break;
+                    case 'polygon':
+                        drawPolygon(x, y, randomInt(3, 8), size/2, color);
+                        break;
+                }
+            }
+        }
+        
+        // 下载图像
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = 'random-shapes-' + new Date().getTime() + '.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        // 开始自动模式
+        function startAutoMode() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            const interval = parseFloat(intervalInput.value) * 1000;
+            const mode = autoModeSelect.value;
+            
+            timerInterval = setInterval(() => {
+                if (mode === 'shapes') {
+                    currentShapeType = (currentShapeType + 1) % shapeTypes.length;
+                } else if (mode === 'colors') {
+                    currentColorScheme = (currentColorScheme + 1) % colorSchemes.length;
+                } else if (mode === 'all') {
+                    // 随机选择是切换图形还是颜色
+                    if (Math.random() > 0.5) {
+                        currentShapeType = (currentShapeType + 1) % shapeTypes.length;
+                    } else {
+                        currentColorScheme = (currentColorScheme + 1) % colorSchemes.length;
+                    }
+                }
+                drawRandomShapes();
+            }, interval);
+            
+            statusText.textContent = `自动模式: 运行中 (间隔: ${intervalInput.value}秒, 模式: ${autoModeSelect.options[autoModeSelect.selectedIndex].text})`;
+        }
+        
+        // 停止自动模式
+        function stopAutoMode() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            statusText.textContent = '自动模式: 已停止';
+        }
+        
+        // 事件监听器
+        generateBtn.addEventListener('click', drawRandomShapes);
+        downloadBtn.addEventListener('click', downloadImage);
+        
+        changeColorBtn.addEventListener('click', () => {
+            currentColorScheme = (currentColorScheme + 1) % colorSchemes.length;
+            drawRandomShapes();
+        });
+        
+        changeShapeBtn.addEventListener('click', () => {
+            currentShapeType = (currentShapeType + 1) % shapeTypes.length;
+            drawRandomShapes();
+        });
+        
+        startTimerBtn.addEventListener('click', startAutoMode);
+        stopTimerBtn.addEventListener('click', stopAutoMode);
+        
+        // 初始化画布和绘制
+        initCanvas();
+    </script>
+</body>
+</html>
