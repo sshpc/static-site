@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>声音分析与可视化</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+      color: #fff;
+      min-height: 100vh;
+    }
+    .container {
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border: 1px solid #4a5568;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.2rem;
+      background: linear-gradient(to right, #00c9ff, #92fe9d);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .chart-container {
+      margin: 35px 0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    }
+    h2 {
+      text-align: center;
+      margin: 15px 0;
+      color: #00ffcc;
+      font-size: 1.4rem;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #000;
+      border: 1px solid #333;
+    }
+    button {
+      display: block;
+      margin: 25px auto;
+      padding: 14px 35px;
+      font-size: 1.2rem;
+      background: linear-gradient(to bottom, #4cc9f0, #1a2a6c);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    button:hover {
+      transform: scale(1.05);
+      background: linear-gradient(to bottom, #64d9ff, #0a1a4a);
+      box-shadow: 0 6px 20px rgba(0,200,255,0.4);
+    }
+    .info {
+      text-align: center;
+      font-size: 0.95rem;
+      color: #aaa;
+      margin-top: 15px;
+      padding: 10px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>声音分析与可视化</h1>
+    
+    <button id="startBtn">开始录音分析</button>
+    
+    <div class="chart-container">
+      <h2>频率分布图（Hz）</h2>
+      <canvas id="frequencyChart" width="800" height="300"></canvas>
+      <div class="info">X轴：频率(Hz) | Y轴：能量强度 | 颜色：频率值（色相映射）</div>
+    </div>
+    
+    <div class="chart-container">
+      <h2>响度变化图</h2>
+      <canvas id="loudnessChart" width="800" height="120"></canvas>
+      <div class="info">实时响度变化（RMS值） | 绿色：正常 | 红色：高响度</div>
+    </div>
+  </div>
+
+  <script>
+    // 初始化变量
+    let audioContext, analyser, frequencyData, timeData;
+    let isRecording = false;
+    const fftSize = 256;
+    const sampleRate = 44100;
+    
+    // 获取DOM元素
+    const frequencyChart = document.getElementById('frequencyChart');
+    const loudnessChart = document.getElementById('loudnessChart');
+    const startBtn = document.getElementById('startBtn');
+    
+    // 设置画布上下文
+    const freqCtx = frequencyChart.getContext('2d');
+    const loudCtx = loudnessChart.getContext('2d');
+    
+    // 初始化分析器
+    function initAnalyzer() {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = fftSize;
+      
+      // 频率数据数组
+      frequencyData = new Uint8Array(analyser.frequencyBinCount);
+      
+      // 时域数据数组（用于响度）
+      timeData = new Uint8Array(fftSize);
+      
+      // 初始化图表
+      drawFrequencyChart();
+      drawLoudnessChart();
+    }
+    
+    // 绘制频率图（带Hz标注）
+    function drawFrequencyChart() {
+      requestAnimationFrame(drawFrequencyChart);
+      
+      // 获取频率数据
+      analyser.getByteFrequencyData(frequencyData);
+      
+      // 清空画布
+      freqCtx.clearRect(0, 0, frequencyChart.width, frequencyChart.height);
+      
+      // 绘制背景
+      freqCtx.fillStyle = '#000';
+      freqCtx.fillRect(0, 0, frequencyChart.width, frequencyChart.height);
+      
+      // 绘制频谱柱
+      const barWidth = frequencyChart.width / frequencyData.length;
+      for (let i = 0; i < frequencyData.length; i++) {
+        // 计算当前频率 (Hz)
+        const freq = i * (sampleRate / fftSize);
+        
+        // 计算柱子高度（能量强度）
+        const barHeight = (frequencyData[i] / 255) * frequencyChart.height;
+        
+        // 颜色映射（频率越高，色相越红）
+        const hue = Math.min(255, freq / 100); // 0-255
+        freqCtx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+        
+        // 绘制柱子
+        freqCtx.fillRect(i * barWidth, frequencyChart.height - barHeight, barWidth - 1, barHeight);
+      }
+      
+      // 绘制频率刻度（每1000Hz一个标注）
+      freqCtx.fillStyle = '#aaa';
+      freqCtx.font = '12px Arial';
+      freqCtx.textAlign = 'center';
+      
+      const freqStep = 1000;
+      for (let freq = 0; freq <= sampleRate / 2; freq += freqStep) {
+        const x = (freq * fftSize) / sampleRate;
+        if (x < frequencyChart.width) {
+          freqCtx.fillText(`${freq}Hz`, x, frequencyChart.height + 25);
+        }
+      }
+    }
+    
+    // 绘制响度图（RMS振幅）
+    function drawLoudnessChart() {
+      requestAnimationFrame(drawLoudnessChart);
+      
+      // 获取时域数据
+      analyser.getByteTimeDomainData(timeData);
+      
+      // 清空画布
+      loudCtx.clearRect(0, 0, loudnessChart.width, loudnessChart.height);
+      
+      // 计算RMS（响度）值
+      let sum = 0;
+      for (let i = 0; i < timeData.length; i++) {
+        const val = (timeData[i] - 128) / 128; // 转换为-1~1
+        sum += val * val;
+      }
+      const rms = Math.sqrt(sum / timeData.length);
+      
+      // 绘制响度波形
+      loudCtx.beginPath();
+      loudCtx.strokeStyle = rms > 0.3 ? '#ff4444' : '#00ff99'; // 高响度变红
+      loudCtx.lineWidth = 2;
+      
+      const step = loudnessChart.width / timeData.length;
+      let x = 0;
+      
+      for (let i = 0; i < timeData.length; i++) {
+        const y = (timeData[i] - 128) / 128; // -1~1
+        const yPos = loudnessChart.height / 2 + y * (loudnessChart.height / 2);
+        
+        if (i === 0) {
+          loudCtx.moveTo(x, yPos);
+        } else {
+          loudCtx.lineTo(x, yPos);
+        }
+        x += step;
+      }
+      
+      loudCtx.stroke();
+      
+      // 显示当前响度值
+      loudCtx.fillStyle = '#fff';
+      loudCtx.font = '16px Arial';
+      loudCtx.textAlign = 'center';
+      loudCtx.fillText(`响度: ${rms.toFixed(2)}`, loudnessChart.width / 2, 30);
+    }
+    
+    // 开始录音
+    startBtn.addEventListener('click', async () => {
+      if (isRecording) return;
+      
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        isRecording = true;
+        
+        // 初始化分析器
+        initAnalyzer();
+        
+        // 连接音频源
+        const source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyser);
+        
+        startBtn.textContent = "正在分析中...";
+        startBtn.style.background = "linear-gradient(to bottom, #ff6b6b, #c0392b)";
+        
+        console.log("声音分析已启动，当前采样率:", sampleRate, "Hz");
+        
+      } catch (err) {
+        console.error("麦克风访问失败:", err);
+        alert("无法访问麦克风，请检查浏览器权限设置！");
+      }
+    });
+  </script>
+</body>
+</html>
