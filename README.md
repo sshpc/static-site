@@ -2,10 +2,7 @@
 
 这是一个包含多个静态网页项目的集合仓库。所有项目都已配置为可通过GitHub Pages直接访问。
 
-## 项目内容
+[https://sshpc.github.io/static-site/](https://sshpc.github.io/static-site/)
 
-- **柴油发动机模拟** - 175发动机
-- **21点游戏** - 经典的21点扑克牌游戏实现
-- **随机图形生成器** - 生成各种随机图形的创意工具
 
 

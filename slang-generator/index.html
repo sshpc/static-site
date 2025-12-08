@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>互联网黑话生成器 | 赋能你的表达方式</title>
+    <style>
+        :root {
+            --primary: #8B7355;
+            --secondary: #D4B996;
+            --accent: #A17C5F;
+            --light: #F5F0E6;
+            --dark: #3E2D1E;
+            --tea-green: #C8D5B9;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #F5F0E6 0%, #E8DFCA 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            border-bottom: 1px dashed var(--primary);
+            position: relative;
+        }
+        
+        h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+        
+        .subtitle {
+            color: var(--accent);
+            font-size: 1.2rem;
+            font-style: italic;
+        }
+        
+        .tea-leaf {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%238B7355' d='M12,2C13.66,2 15,3.34 15,5C15,6.66 13.66,8 12,8C10.34,8 9,6.66 9,5C9,3.34 10.34,2 12,2M12,12C16.42,12 20,13.79 20,16V18C20,19.1 19.1,20 18,20H6C4.9,20 4,19.1 4,18V16C4,13.79 7.58,12 12,12Z'/%3E%3C/svg%3E");
+            opacity: 0.7;
+        }
+        
+        .tea-leaf-1 { top: 10px; left: 10%; }
+        .tea-leaf-2 { top: 30px; right: 15%; }
+        .tea-leaf-3 { bottom: 10px; left: 20%; }
+        
+        .content {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+        }
+        
+        .article-container {
+            flex: 2;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(139, 115, 85, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .article-container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+        
+        .controls {
+            flex: 1;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(139, 115, 85, 0.1);
+            align-self: flex-start;
+        }
+        
+        h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--secondary);
+            font-weight: 400;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--accent);
+            font-size: 0.9rem;
+        }
+        
+        select, input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid var(--secondary);
+            border-radius: 8px;
+            background: var(--light);
+            color: var(--dark);
+            font-size: 1rem;
+        }
+        
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        button:hover {
+            background: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(139, 115, 85, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .highlight {
+            background-color: rgba(212, 185, 150, 0.3);
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-style: italic;
+        }
+        
+        .tea-cup {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin: 0 5px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%238B7355' d='M18.32,8H5.67L5.23,4H18.77M3,2L5,20.23C5.13,21.23 5.97,22 7,22H17C18,22 18.87,21.23 19,20.23L21,2H3Z'/%3E%3C/svg%3E");
+            vertical-align: middle;
+        }
+        
+        .quote {
+            border-left: 3px solid var(--secondary);
+            padding-left: 15px;
+            margin: 20px 0;
+            font-style: italic;
+            color: var(--accent);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--accent);
+            font-size: 0.9rem;
+            border-top: 1px dashed var(--primary);
+        }
+        
+        .bubble {
+            position: relative;
+            background: var(--tea-green);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            max-width: 80%;
+        }
+        
+        .bubble:after {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: -10px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 10px solid var(--tea-green);
+        }
+        
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="tea-leaf tea-leaf-1 floating"></div>
+            <div class="tea-leaf tea-leaf-2 floating" style="animation-delay: 0.5s;"></div>
+            <div class="tea-leaf tea-leaf-3 floating" style="animation-delay: 1s;"></div>
+            <h1>互联网黑话生成器</h1>
+            <p class="subtitle">赋能你的表达方式，打造差异化认知，实现价值转化</p>
+        </header>
+        
+        <div class="content">
+            <div class="article-container">
+                <h2>深度思考：如何通过<span class="highlight">闭环思维</span>实现业务<span class="highlight">赋能</span></h2>
+                <div class="article-content">
+                    <p>在当前<span class="highlight">快速迭代</span>的互联网下半场，我们需要<span class="highlight">躬身入局</span>，通过<span class="highlight">精细化运营</span>和<span class="highlight">差异化打法</span>，打造<span class="highlight">核心竞争力</span>。</p>
+                    
+                    <div class="bubble">
+                        我们需要<span class="highlight">对齐思路</span>，<span class="highlight">打通壁垒</span>，建立<span class="highlight">协同机制</span>，实现<span class="highlight">资源最优配置</span>。
+                    </div>
+                    
+                    <p>通过<span class="highlight">数据驱动</span>的<span class="highlight">决策机制</span>，我们可以<span class="highlight">精准触达</span>目标用户，实现<span class="highlight">高效转化</span>。在这个过程中，<span class="highlight">用户心智</span>的<span class="highlight">占领</span>是关键<span class="highlight">抓手</span>。</p>
+                    
+                    <div class="quote">
+                        "我们要<span class="highlight">小步快跑</span>，<span class="highlight">快速试错</span>，在<span class="highlight">不确定性</span>中寻找<span class="highlight">确定性</span>，实现<span class="highlight">可持续增长</span>。"
+                    </div>
+                    
+                    <p>在<span class="highlight">战略层面</span>，我们需要<span class="highlight">升维思考</span>，同时<span class="highlight">降维打击</span>，通过<span class="highlight">矩阵式布局</span>和<span class="highlight">生态化运营</span>，构建<span class="highlight">护城河</span>。</p>
+                    
+                    <p>最终，我们要实现<span class="highlight">品效合一</span>，通过<span class="highlight">价值输出</span>建立<span class="highlight">品牌认知</span>，完成从<span class="highlight">流量思维</span>到<span class="highlight">用户思维</span>的<span class="highlight">转变</span>。</p>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <h2>定制你的黑话文章</h2>
+                
+                <div class="form-group">
+                    <label for="industry">选择行业领域</label>
+                    <select id="industry">
+                        <option value="tech">互联网科技</option>
+                        <option value="finance">金融投资</option>
+                        <option value="education">在线教育</option>
+                        <option value="health">大健康</option>
+                        <option value="retail">新零售</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="complexity">黑话密度</label>
+                    <select id="complexity">
+                        <option value="light">轻度（偶尔点缀）</option>
+                        <option value="medium" selected>中度（适度使用）</option>
+                        <option value="heavy">重度（密集轰炸）</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="purpose">文章目的</label>
+                    <select id="purpose">
+                        <option value="strategy">战略规划</option>
+                        <option value="report">工作汇报</option>
+                        <option value="proposal">项目提案</option>
+                        <option value="summary">季度总结</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="keywords">关键词（可选，用逗号分隔）</label>
+                    <input type="text" id="keywords" placeholder="例如：赋能,闭环,抓手">
+                </div>
+                
+                <button id="generate-btn">
+                    <span class="tea-cup"></span>
+                    生成专属黑话文章
+                    <span class="tea-cup"></span>
+                </button>
+            </div>
+        </div>
+        
+        <footer>
+            <p>本工具仅供娱乐，过度使用可能导致沟通障碍 <span class="tea-cup"></span> | 实际工作中请谨慎使用黑话</p>
+        </footer>
+    </div>
+
+    <script>
+        document.getElementById('generate-btn').addEventListener('click', function() {
+            const industry = document.getElementById('industry').value;
+            const complexity = document.getElementById('complexity').value;
+            const purpose = document.getElementById('purpose').value;
+            const keywords = document.getElementById('keywords').value.split(',').map(k => k.trim()).filter(k => k);
+            
+            // 模拟生成文章（实际应用中这里会有更复杂的逻辑）
+            const article = generateArticle(industry, complexity, purpose, keywords);
+            
+            // 更新文章内容
+            document.querySelector('.article-content').innerHTML = article;
+            
+            // 添加一些动画效果
+            this.innerHTML = '<span class="tea-cup"></span> 生成成功！ <span class="tea-cup"></span>';
+            setTimeout(() => {
+                this.innerHTML = '<span class="tea-cup"></span> 生成专属黑话文章 <span class="tea-cup"></span>';
+            }, 2000);
+        });
+        
+        function generateArticle(industry, complexity, purpose, keywords) {
+            // 基础段落模板
+            const paragraphs = [
+                `在当前<span class="highlight">快速迭代</span>的${getIndustryName(industry)}领域，我们需要<span class="highlight">躬身入局</span>，通过<span class="highlight">精细化运营</span>和<span class="highlight">差异化打法</span>，打造<span class="highlight">核心竞争力</span>。`,
+                
+                `通过<span class="highlight">数据驱动</span>的<span class="highlight">决策机制</span>，我们可以<span class="highlight">精准触达</span>目标用户，实现<span class="highlight">高效转化</span>。在这个过程中，<span class="highlight">用户心智</span>的<span class="highlight">占领</span>是关键<span class="highlight">抓手</span>。`,
+                
+                `在<span class="highlight">战略层面</span>，我们需要<span class="highlight">升维思考</span>，同时<span class="highlight">降维打击</span>，通过<span class="highlight">矩阵式布局</span>和<span class="highlight">生态化运营</span>，构建<span class="highlight">护城河</span>。`,
+                
+                `最终，我们要实现<span class="highlight">品效合一</span>，通过<span class="highlight">价值输出</span>建立<span class="highlight">品牌认知</span>，完成从<span class="highlight">流量思维</span>到<span class="highlight">用户思维</span>的<span class="highlight">转变</span>。`
+            ];
+            
+            // 根据复杂度调整内容
+            let content = '';
+            
+            if (complexity === 'light') {
+                content = paragraphs.slice(0, 2).join('');
+            } else if (complexity === 'medium') {
+                content = paragraphs.join('');
+            } else {
+                content = paragraphs.join('') + getAdditionalContent();
+            }
+            
+            // 添加自定义关键词
+            if (keywords.length > 0) {
+                keywords.forEach(keyword => {
+                    const regex = new RegExp(`(${keyword})`, 'g');
+                    content = content.replace(regex, `<span class="highlight">$1</span>`);
+                });
+            }
+            
+            // 添加气泡和引用
+            const bubble = `<div class="bubble">我们需要<span class="highlight">对齐思路</span>，<span class="highlight">打通壁垒</span>，建立<span class="highlight">协同机制</span>，实现<span class="highlight">资源最优配置</span>。</div>`;
+            const quote = `<div class="quote">"我们要<span class="highlight">小步快跑</span>，<span class="highlight">快速试错</span>，在<span class="highlight">不确定性</span>中寻找<span class="highlight">确定性</span>，实现<span class="highlight">可持续增长</span>。"</div>`;
+            
+            // 将气泡和引用插入到适当位置
+            const parts = content.split('。');
+            if (parts.length > 2) {
+                parts.splice(1, 0, bubble);
+                parts.splice(3, 0, quote);
+                content = parts.join('。');
+            }
+            
+            return content;
+        }
+        
+        function getIndustryName(industry) {
+            const industries = {
+                'tech': '互联网科技',
+                'finance': '金融投资',
+                'education': '在线教育',
+                'health': '大健康',
+                'retail': '新零售'
+            };
+            return industries[industry] || '互联网';
+        }
+        
+        function getAdditionalContent() {
+            return `<p>此外，我们还需要<span class="highlight">深度挖掘</span>用户<span class="highlight">痛点</span>，通过<span class="highlight">场景化解决方案</span>实现<span class="highlight">价值传递</span>，建立<span class="highlight">长期用户关系</span>。</p>
+                    <p>在<span class="highlight">执行层面</span>，我们要<span class="highlight">聚焦核心</span>，<span class="highlight">持续优化</span>，通过<span class="highlight">敏捷开发</span>和<span class="highlight">快速响应</span>，实现<span class="highlight">业务突破</span>。</p>`;
+        }
+    </script>
+</body>
+</html>
