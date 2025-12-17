@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线Meta元素分析工具</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>在线Meta元素分析工具</h1>
+            <p>输入URL，分析网页中的所有Meta标签信息</p>
+        </header>
+        
+        <main>
+            <section class="input-section">
+                <form id="metaForm">
+                    <div class="input-group">
+                        <label for="urlInput1">网页URL 1</label>
+                        <input type="url" id="urlInput1" name="url1" placeholder="https://example.com" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="urlInput2">网页URL 2 (可选，用于对比)</label>
+                        <input type="url" id="urlInput2" name="url2" placeholder="https://example2.com">
+                    </div>
+                    <button type="submit" id="analyzeBtn">分析Meta标签</button>
+                </form>
+            </section>
+            
+            <section class="result-section" id="resultSection">
+                <div class="loading" id="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>正在分析...请稍候</p>
+                </div>
+                
+                <div class="result" id="result" style="display: none;">
+                    <h2>分析结果</h2>
+                    <div id="metaList"></div>
+                </div>
+                
+                <div class="error" id="error" style="display: none;">
+                    <h2>错误</h2>
+                    <p id="errorMessage"></p>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
