@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>精简版麻将</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>精简版麻将</h1>
+            <div class="game-info">
+                <span class="info-item">庄家: <span id="dealer">东</span></span>
+                <span class="info-item">风圈: <span id="wind">东</span></span>
+                <span class="info-item">剩余牌数: <span id="remaining">144</span></span>
+            </div>
+        </div>
+
+        <div class="game-layout">
+            <div class="ai-players">
+                <div class="player-area ai-player" id="player-top">
+                    <div class="player-info">
+                        <span class="player-name">机器人1</span>
+                        <span class="player-score">分数: 0</span>
+                    </div>
+                    <div class="player-hand" id="hand-top"></div>
+                    <div class="player-actions" id="actions-top"></div>
+                </div>
+                <div class="player-area ai-player" id="player-left">
+                    <div class="player-info">
+                        <span class="player-name">机器人2</span>
+                        <span class="player-score">分数: 0</span>
+                    </div>
+                    <div class="player-hand" id="hand-left"></div>
+                    <div class="player-actions" id="actions-left"></div>
+                </div>
+                <div class="player-area ai-player" id="player-right">
+                    <div class="player-info">
+                        <span class="player-name">机器人3</span>
+                        <span class="player-score">分数: 0</span>
+                    </div>
+                    <div class="player-hand" id="hand-right"></div>
+                    <div class="player-actions" id="actions-right"></div>
+                </div>
+            </div>
+            
+            <div class="main-area">
+                <div class="center-area">
+                    <div class="discard-pile" id="discard-pile"></div>
+                    <div class="game-message" id="game-message"></div>
+                    <div class="current-action" id="current-action"></div>
+                </div>
+                
+                <div class="player-area player-bottom" id="player-bottom">
+                    <div class="player-info">
+                        <span class="player-name">玩家</span>
+                        <span class="player-score">分数: 0</span>
+                    </div>
+                    <div class="player-hand" id="hand-bottom"></div>
+                    <div class="player-actions" id="actions-bottom"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <button class="btn btn-primary" id="btn-start">开始游戏</button>
+            <button class="btn btn-secondary" id="btn-sort">理牌</button>
+            <button class="btn btn-secondary" id="btn-hu">和牌</button>
+            <button class="btn btn-secondary" id="btn-gang">杠牌</button>
+            <button class="btn btn-secondary" id="btn-peng">碰牌</button>
+            <button class="btn btn-secondary" id="btn-chi">吃牌</button>
+        </div>
+
+        <div class="modal" id="modal">
+            <div class="modal-content">
+                <h2 id="modal-title">游戏结束</h2>
+                <p id="modal-message"></p>
+                <button class="btn btn-primary" id="btn-modal-close">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
