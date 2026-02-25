@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>倒计时分段展示</title>
+<style>
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
+  background:linear-gradient(135deg,#f1f5f9,#e2e8f0);
+}
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:20px;
+}
+.card{
+  background:#fff;
+  border-radius:20px;
+  padding:20px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.08);
+  margin-bottom:20px;
+}
+.controls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  justify-content:center;
+}
+input{
+  width:80px;
+  padding:8px;
+  border-radius:10px;
+  border:1px solid #ddd;
+  text-align:center;
+}
+button{
+  padding:8px 14px;
+  border-radius:10px;
+  border:none;
+  background:#3b82f6;
+  color:#fff;
+  cursor:pointer;
+}
+button.secondary{
+  background:#64748b;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(120px,1fr));
+  gap:15px;
+}
+.segment{
+  background:#fff;
+  border-radius:20px;
+  padding:15px;
+  text-align:center;
+  box-shadow:0 5px 15px rgba(0,0,0,0.08);
+  position:relative;
+}
+.segment.active{
+  outline:3px solid #3b82f6;
+}
+svg{
+  transform:rotate(-90deg);
+}
+.time-text{
+  font-size:18px;
+  font-weight:bold;
+  margin-top:10px;
+}
+#finishNotice{
+  display:none;
+  text-align:center;
+  font-size:22px;
+  font-weight:bold;
+  color:#16a34a;
+  margin-top:20px;
+}
+@media(max-width:600px){
+  input{width:60px;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="card">
+<h2 style="text-align:center">倒计时分段展示</h2>
+
+<div class="controls" style="margin-bottom:15px;">
+<button class="secondary" onclick="quickSelect(1)">1分钟</button>
+<button class="secondary" onclick="quickSelect(3)">3分钟</button>
+<button class="secondary" onclick="quickSelect(5)">5分钟</button>
+<button class="secondary" onclick="quickSelect(10)">10分钟</button>
+<button class="secondary" onclick="quickSelect(15)">15分钟</button>
+<button class="secondary" onclick="quickSelect(30)">30分钟</button>
+</div>
+
+<div class="controls">
+<input type="number" id="hours" placeholder="小时" value="0">
+<input type="number" id="minutes" placeholder="分钟" value="1">
+<input type="number" id="seconds" placeholder="秒" value="0">
+<button onclick="startCountdown()">开始</button>
+</div>
+
+<div style="text-align:center;margin-top:10px;">
+总时间：<span id="totalDisplay">00:01:00</span>
+</div>
+</div>
+
+<div class="grid" id="grid"></div>
+<div id="finishNotice">🎉 倒计时结束！</div>
+
+</div>
+
+<script>
+let segments=[];
+let currentIndex=0;
+let timer=null;
+
+function formatTime(total){
+  let h=Math.floor(total/3600);
+  let m=Math.floor((total%3600)/60);
+  let s=total%60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function quickSelect(mins){
+  document.getElementById('hours').value=0;
+  document.getElementById('minutes').value=mins;
+  document.getElementById('seconds').value=0;
+  updateTotal();
+}
+
+function updateTotal(){
+  let total=getTotalSeconds();
+  document.getElementById('totalDisplay').innerText=formatTime(total);
+}
+
+function getTotalSeconds(){
+  let h=parseInt(document.getElementById('hours').value)||0;
+  let m=parseInt(document.getElementById('minutes').value)||0;
+  let s=parseInt(document.getElementById('seconds').value)||0;
+  return h*3600+m*60+s;
+}
+
+function startCountdown(){
+  clearInterval(timer);
+  document.getElementById('finishNotice').style.display='none';
+  let total=getTotalSeconds();
+  if(total<=0) return;
+
+  let segmentLength=5;
+  if(total>=600) segmentLength=60;
+  else if(total>=300) segmentLength=30;
+  else if(total>=120) segmentLength=15;
+
+  let count=Math.ceil(total/segmentLength);
+  segments=[];
+  for(let i=0;i<count;i++){
+    let seg=(i===count-1)? total-segmentLength*(count-1):segmentLength;
+    segments.push({remaining:seg,total:seg});
+  }
+
+  currentIndex=0;
+  renderGrid();
+
+  timer=setInterval(()=>{
+    if(segments[currentIndex].remaining>0){
+      segments[currentIndex].remaining--;
+    }else{
+      if(currentIndex<segments.length-1){
+        currentIndex++;
+      }else{
+        clearInterval(timer);
+        document.getElementById('finishNotice').style.display='block';
+      }
+    }
+    renderGrid();
+  },1000);
+}
+
+function renderGrid(){
+  let grid=document.getElementById('grid');
+  grid.innerHTML='';
+
+  segments.forEach((seg,idx)=>{
+    let div=document.createElement('div');
+    div.className='segment'+(idx===currentIndex?' active':'');
+
+    let radius=36;
+    let circumference=2*Math.PI*radius;
+    let progress=seg.remaining/seg.total;
+    let offset=circumference*(1-progress);
+
+    div.innerHTML=`
+    <svg width="90" height="90">
+      <circle cx="45" cy="45" r="${radius}" stroke="#e5e7eb" stroke-width="8" fill="none"/>
+      <circle cx="45" cy="45" r="${radius}" stroke="#3b82f6" stroke-width="8" fill="none"
+        stroke-linecap="round"
+        stroke-dasharray="${circumference}"
+        stroke-dashoffset="${offset}" 
+        style="transition:stroke-dashoffset 1s linear"/>
+    </svg>
+    <div class="time-text">${idx===currentIndex?seg.remaining:seg.total}s</div>
+    `;
+
+    grid.appendChild(div);
+  });
+}
+
+document.querySelectorAll('#hours,#minutes,#seconds').forEach(el=>{
+  el.addEventListener('input',updateTotal);
+});
+
+updateTotal();
+</script>
+
+</body>
+</html>
