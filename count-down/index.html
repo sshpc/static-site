@@ -3,220 +3,468 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>倒计时分段展示</title>
+<title>倒计时</title>
 <style>
-body{
-  margin:0;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
-  background:linear-gradient(135deg,#f1f5f9,#e2e8f0);
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
+  color: #333;
+  min-height: 100vh;
 }
-.container{
-  max-width:1200px;
-  margin:auto;
-  padding:20px;
+
+.container {
+  max-width: 1000px;
+  margin: auto;
+  padding: 20px;
 }
-.card{
-  background:#fff;
-  border-radius:20px;
-  padding:20px;
-  box-shadow:0 10px 25px rgba(0,0,0,0.08);
-  margin-bottom:20px;
+
+.card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 30px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  margin-bottom: 30px;
+  text-align: center;
 }
-.controls{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  justify-content:center;
+
+h2 { margin-top: 0; color: #1e293b; font-size: 24px; }
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 20px;
 }
-input{
-  width:80px;
-  padding:8px;
-  border-radius:10px;
-  border:1px solid #ddd;
-  text-align:center;
+
+input {
+  width: 70px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  text-align: center;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.2s;
 }
-button{
-  padding:8px 14px;
-  border-radius:10px;
-  border:none;
-  background:#3b82f6;
-  color:#fff;
-  cursor:pointer;
+input:focus { border-color: #3b82f6; }
+
+button {
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  background: #3b82f6;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s, background 0.2s;
+  font-size: 15px;
 }
-button.secondary{
-  background:#64748b;
+button:hover { background: #2563eb; transform: translateY(-1px); }
+button:active { transform: translateY(1px); }
+button.secondary { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+button.secondary:hover { background: #e2e8f0; }
+
+.total-info {
+  font-size: 18px;
+  color: #64748b;
+  margin-top: 15px;
+  font-weight: 500;
 }
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(120px,1fr));
-  gap:15px;
+#totalDisplay { color: #0f172a; font-weight: bold; font-family: monospace; font-size: 20px; }
+#strategyInfo { font-size: 14px; color: #94a3b8; margin-left: 10px; display: block; margin-top: 5px;}
+
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  min-height: 160px;
+  transition: all 0.5s ease;
 }
-.segment{
-  background:#fff;
-  border-radius:20px;
-  padding:15px;
-  text-align:center;
-  box-shadow:0 5px 15px rgba(0,0,0,0.08);
-  position:relative;
+
+.segment {
+  background: #fff;
+  border-radius: 20px;
+  padding: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 110px;
+  height: 140px;
+  position: relative;
+  animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
 }
-.segment.active{
-  outline:3px solid #3b82f6;
+
+/* 激活状态：高亮 */
+.segment.active {
+  border-color: #3b82f6;
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.25);
+  transform: scale(1.08);
+  z-index: 10;
+  background: #f8fafc;
 }
-svg{
-  transform:rotate(-90deg);
+
+/* 完成状态：消失动画 */
+.segment.finished {
+  opacity: 0;
+  transform: scale(0.5);
+  pointer-events: none;
+  margin: 0; /* 防止占位 */
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  padding: 0;
 }
-.time-text{
-  font-size:18px;
-  font-weight:bold;
-  margin-top:10px;
+
+svg { transform: rotate(-90deg); width: 80px; height: 80px; }
+circle { fill: none; stroke-width: 8; stroke-linecap: round; }
+.bg-circle { stroke: #e2e8f0; }
+.progress-circle { stroke: #3b82f6; transition: stroke-dashoffset 0.1s linear; }
+
+.time-text {
+  margin-top: 10px;
+  font-size: 20px;
+  font-weight: 800;
+  font-family: monospace;
+  color: #1e293b;
 }
-#finishNotice{
-  display:none;
-  text-align:center;
-  font-size:22px;
-  font-weight:bold;
-  color:#16a34a;
-  margin-top:20px;
+.label-text { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+#finishNotice {
+  display: none;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 800;
+  color: #16a34a;
+  margin-top: 30px;
+  animation: bounce 1s infinite;
 }
-@media(max-width:600px){
-  input{width:60px;}
+
+@keyframes popIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+@media (max-width: 600px) {
+  input { width: 55px; padding: 8px; }
+  .segment { width: 90px; height: 120px; }
+  svg { width: 60px; height: 60px; }
+  .time-text { font-size: 16px; }
 }
 </style>
 </head>
 <body>
+
 <div class="container">
+  <div class="card">
+    <h2>⏱️ 全量展示动态倒计时</h2>
+    <p style="font-size:14px; color:#64748b; margin-bottom:20px;">
+      圆环
+    </p>
+    
+    <div class="controls">
+      <button class="secondary" onclick="quickSet(1)">1分</button>
+      <button class="secondary" onclick="quickSet(3)">3分</button>
+      <button class="secondary" onclick="quickSet(5)">5分</button>
+      <button class="secondary" onclick="quickSet(10)">10分</button>
+      <button class="secondary" onclick="quickSet(30)">30分</button>
+      <button class="secondary" onclick="quickSet(60)">60分</button>
+    </div>
 
-<div class="card">
-<h2 style="text-align:center">倒计时分段展示</h2>
+    <div class="controls">
+      <input type="number" id="hours" placeholder="时" value="0" min="0">
+      <input type="number" id="minutes" placeholder="分" value="1" min="0">
+      <input type="number" id="seconds" placeholder="秒" value="0" min="0">
+      <button onclick="startCountdown()">开始倒计时</button>
+      <button class="secondary" onclick="stopCountdown()" style="background:#ef4444; color:white;">停止</button>
+    </div>
 
-<div class="controls" style="margin-bottom:15px;">
-<button class="secondary" onclick="quickSelect(1)">1分钟</button>
-<button class="secondary" onclick="quickSelect(3)">3分钟</button>
-<button class="secondary" onclick="quickSelect(5)">5分钟</button>
-<button class="secondary" onclick="quickSelect(10)">10分钟</button>
-<button class="secondary" onclick="quickSelect(15)">15分钟</button>
-<button class="secondary" onclick="quickSelect(30)">30分钟</button>
-</div>
+    <div class="total-info">
+      总时长：<span id="totalDisplay">00:01:00</span> 
+      <span id="strategyInfo"></span>
+    </div>
+  </div>
 
-<div class="controls">
-<input type="number" id="hours" placeholder="小时" value="0">
-<input type="number" id="minutes" placeholder="分钟" value="1">
-<input type="number" id="seconds" placeholder="秒" value="0">
-<button onclick="startCountdown()">开始</button>
-</div>
-
-<div style="text-align:center;margin-top:10px;">
-总时间：<span id="totalDisplay">00:01:00</span>
-</div>
-</div>
-
-<div class="grid" id="grid"></div>
-<div id="finishNotice">🎉 倒计时结束！</div>
-
+  <div class="grid" id="grid"></div>
+  <div id="finishNotice">🎉 倒计时结束！</div>
 </div>
 
 <script>
-let segments=[];
-let currentIndex=0;
-let timer=null;
+// --- 全局状态 ---
+let animationFrameId = null;
+let endTime = 0;
+let isRunning = false;
+let segments = []; // 存储所有段的数据对象 {id, duration, startTimeOffset, elementId}
+let currentSegmentIndex = 0; // 当前正在进行的段的索引
+// ----------------
 
-function formatTime(total){
-  let h=Math.floor(total/3600);
-  let m=Math.floor((total%3600)/60);
-  let s=total%60;
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+const MAX_SEGMENTS = 12;
+const MIN_SEGMENT_TIME = 5;
+
+function formatTime(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-function quickSelect(mins){
-  document.getElementById('hours').value=0;
-  document.getElementById('minutes').value=mins;
-  document.getElementById('seconds').value=0;
-  updateTotal();
+function quickSet(mins) {
+  document.getElementById('hours').value = 0;
+  document.getElementById('minutes').value = mins;
+  document.getElementById('seconds').value = 0;
+  updateTotalDisplay();
 }
 
-function updateTotal(){
-  let total=getTotalSeconds();
-  document.getElementById('totalDisplay').innerText=formatTime(total);
+function getTotalSeconds() {
+  const h = parseInt(document.getElementById('hours').value) || 0;
+  const m = parseInt(document.getElementById('minutes').value) || 0;
+  const s = parseInt(document.getElementById('seconds').value) || 0;
+  return h * 3600 + m * 60 + s;
 }
 
-function getTotalSeconds(){
-  let h=parseInt(document.getElementById('hours').value)||0;
-  let m=parseInt(document.getElementById('minutes').value)||0;
-  let s=parseInt(document.getElementById('seconds').value)||0;
-  return h*3600+m*60+s;
-}
-
-function startCountdown(){
-  clearInterval(timer);
-  document.getElementById('finishNotice').style.display='none';
-  let total=getTotalSeconds();
-  if(total<=0) return;
-
-  let segmentLength=5;
-  if(total>=600) segmentLength=60;
-  else if(total>=300) segmentLength=30;
-  else if(total>=120) segmentLength=15;
-
-  let count=Math.ceil(total/segmentLength);
-  segments=[];
-  for(let i=0;i<count;i++){
-    let seg=(i===count-1)? total-segmentLength*(count-1):segmentLength;
-    segments.push({remaining:seg,total:seg});
+function updateTotalDisplay() {
+  const total = getTotalSeconds();
+  document.getElementById('totalDisplay').innerText = formatTime(total);
+  
+  if (total > 0) {
+    const info = calculateSegments(total);
+    document.getElementById('strategyInfo').innerText = 
+      `(将拆分为 ${info.count} 个圆环，每环约 ${info.baseTime}~${info.baseTime + (info.remainder > 0 ? 1 : 0)} 秒)`;
+  } else {
+    document.getElementById('strategyInfo').innerText = '';
   }
-
-  currentIndex=0;
-  renderGrid();
-
-  timer=setInterval(()=>{
-    if(segments[currentIndex].remaining>0){
-      segments[currentIndex].remaining--;
-    }else{
-      if(currentIndex<segments.length-1){
-        currentIndex++;
-      }else{
-        clearInterval(timer);
-        document.getElementById('finishNotice').style.display='block';
-      }
-    }
-    renderGrid();
-  },1000);
 }
 
-function renderGrid(){
-  let grid=document.getElementById('grid');
-  grid.innerHTML='';
-
-  segments.forEach((seg,idx)=>{
-    let div=document.createElement('div');
-    div.className='segment'+(idx===currentIndex?' active':'');
-
-    let radius=36;
-    let circumference=2*Math.PI*radius;
-    let progress=seg.remaining/seg.total;
-    let offset=circumference*(1-progress);
-
-    div.innerHTML=`
-    <svg width="90" height="90">
-      <circle cx="45" cy="45" r="${radius}" stroke="#e5e7eb" stroke-width="8" fill="none"/>
-      <circle cx="45" cy="45" r="${radius}" stroke="#3b82f6" stroke-width="8" fill="none"
-        stroke-linecap="round"
-        stroke-dasharray="${circumference}"
-        stroke-dashoffset="${offset}" 
-        style="transition:stroke-dashoffset 1s linear"/>
-    </svg>
-    <div class="time-text">${idx===currentIndex?seg.remaining:seg.total}s</div>
-    `;
-
-    grid.appendChild(div);
-  });
-}
-
-document.querySelectorAll('#hours,#minutes,#seconds').forEach(el=>{
-  el.addEventListener('input',updateTotal);
+['hours', 'minutes', 'seconds'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateTotalDisplay);
 });
 
-updateTotal();
-</script>
+function stopCountdown() {
+  if (animationFrameId) cancelAnimationFrame(animationFrameId);
+  animationFrameId = null;
+  isRunning = false;
+  document.getElementById('finishNotice').style.display = 'none';
+}
 
+// 核心算法：计算分段策略
+function calculateSegments(totalTime) {
+  if (totalTime <= 0) return { count: 0, baseTime: 0, remainder: 0, durations: [] };
+
+  // 1. 确定段数
+  // 理想情况：每段5秒。段数 = totalTime / 5
+  let idealCount = Math.ceil(totalTime / MIN_SEGMENT_TIME);
+  // 限制最大12段
+  let count = Math.min(idealCount, MAX_SEGMENTS);
+  
+  // 如果 totalTime 很小，导致 count 算出来是 0 (不可能，因为MIN_SEGMENT_TIME=5)，修正
+  if (count === 0 && totalTime > 0) count = 1;
+
+  // 2. 均分时间
+  let baseTime = Math.floor(totalTime / count);
+  let remainder = totalTime % count;
+  
+  // 如果 baseTime < 5 且 count > 1，说明段数太多了，需要减少段数以保证每段>=5
+  // 这种情况通常发生在 totalTime < 60 但试图分成12段时，或者逻辑边界
+  while (baseTime < MIN_SEGMENT_TIME && count > 1) {
+    count--;
+    baseTime = Math.floor(totalTime / count);
+    remainder = totalTime % count;
+  }
+  
+  // 生成具体每段的时长数组
+  let durations = [];
+  for (let i = 0; i < count; i++) {
+    // 前 remainder 个段多1秒，实现均匀分布
+    durations.push(baseTime + (i < remainder ? 1 : 0));
+  }
+
+  return { count, baseTime, remainder, durations };
+}
+
+function startCountdown() {
+  stopCountdown();
+  
+  const total = getTotalSeconds();
+  if (total <= 0) { alert("请输入有效时间！"); return; }
+
+  isRunning = true;
+  document.getElementById('finishNotice').style.display = 'none';
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  segments = [];
+  currentSegmentIndex = 0;
+
+  // 1. 计算分段
+  const plan = calculateSegments(total);
+  
+  // 2. 创建所有段的数据和DOM元素（全量展示）
+  let accumulatedTime = 0;
+  plan.durations.forEach((duration, index) => {
+    const segData = {
+      id: index,
+      duration: duration,
+      startTimeOffset: accumulatedTime, // 相对于总开始时间的偏移量
+      endTimeOffset: accumulatedTime + duration,
+      elementId: `seg-${index}`
+    };
+    segments.push(segData);
+    accumulatedTime += duration;
+    
+    // 创建DOM
+    createSegmentElement(segData, index === 0); // 第一个默认激活
+  });
+
+  // 3. 启动计时
+  endTime = Date.now() + total * 1000;
+  
+  document.getElementById('strategyInfo').innerText = 
+    `(共 ${plan.count} 环 | 当前第 ${currentSegmentIndex + 1} 环)`;
+
+  function loop() {
+    if (!isRunning) return;
+
+    const now = Date.now();
+    const totalElapsedSec = (now - (endTime - total * 1000)) / 1000;
+    const timeLeftSec = Math.max(0, total - totalElapsedSec);
+
+    // 检查是否全部结束
+    if (timeLeftSec <= 0.05) {
+      finishAll();
+      return;
+    }
+
+    // 确定当前应该在哪一段
+    // 找到第一个 endTimeOffset > totalElapsedSec 的段
+    let newActiveIndex = -1;
+    for (let i = 0; i < segments.length; i++) {
+      if (totalElapsedSec < segments[i].endTimeOffset) {
+        newActiveIndex = i;
+        break;
+      }
+    }
+
+    // 如果索引变了（说明上一段结束了）
+    if (newActiveIndex !== currentSegmentIndex && newActiveIndex !== -1) {
+      // 销毁旧的
+      removeSegmentElement(currentSegmentIndex);
+      // 激活新的
+      currentSegmentIndex = newActiveIndex;
+      activateSegmentElement(currentSegmentIndex);
+      
+      document.getElementById('strategyInfo').innerText = 
+        `(共 ${segments.length} 环 | 当前第 ${currentSegmentIndex + 1} 环)`;
+    } else if (newActiveIndex === -1) {
+      // 理论上由 timeLeftSec 判断捕获，这里做兜底
+      finishAll();
+      return;
+    }
+
+    // 更新当前激活段的视觉
+    if (currentSegmentIndex < segments.length) {
+      const currentSeg = segments[currentSegmentIndex];
+      // 计算当前段内的剩余时间
+      // 当前段开始的实际时间点 = endTime - (total - currentSeg.startTimeOffset) * 1000
+      // 更简单的算法：当前段剩余 = 当前段总时长 - (总已过时间 - 当前段起始偏移)
+      const elapsedInSegment = totalElapsedSec - currentSeg.startTimeOffset;
+      const remainingInSegment = Math.max(0, currentSeg.duration - elapsedInSegment);
+      
+      updateSegmentVisual(currentSeg.elementId, remainingInSegment, currentSeg.duration);
+    }
+
+    animationFrameId = requestAnimationFrame(loop);
+  }
+
+  animationFrameId = requestAnimationFrame(loop);
+}
+
+function createSegmentElement(data, isActive) {
+  const grid = document.getElementById('grid');
+  const div = document.createElement('div');
+  div.className = `segment ${isActive ? 'active' : ''}`;
+  div.id = data.elementId;
+  
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  
+  div.innerHTML = `
+    <svg width="80" height="80">
+      <circle class="bg-circle" cx="40" cy="40" r="${radius}" />
+      <circle class="progress-circle" cx="40" cy="40" r="${radius}" 
+        stroke-dasharray="${circumference}" 
+        stroke-dashoffset="0" />
+    </svg>
+    <div class="time-text">${data.duration}s</div>
+    <div class="label-text">阶段 ${data.id + 1}</div>
+  `;
+  
+  grid.appendChild(div);
+}
+
+function activateSegmentElement(index) {
+  const el = document.getElementById(`seg-${index}`);
+  if (el) {
+    el.classList.add('active');
+    // 重新触发一下动画效果可选，这里主要靠CSS active样式
+  }
+}
+
+function removeSegmentElement(index) {
+  const el = document.getElementById(`seg-${index}`);
+  if (el) {
+    el.classList.remove('active');
+    el.classList.add('finished');
+    // CSS transition 处理消失，不需要JS手动remove，或者等动画完remove
+    // 为了保持网格布局流畅，CSS里设置了 finished 后 width/height 为 0
+  }
+}
+
+function updateSegmentVisual(id, remaining, total) {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  const textEl = el.querySelector('.time-text');
+  const circleEl = el.querySelector('.progress-circle');
+  
+  // 只有当数字变化时才更新DOM，减少重绘（虽然requestAnimationFrame很快）
+  const ceilRem = Math.ceil(remaining);
+  if (textEl.innerText !== ceilRem + 's') {
+    textEl.innerText = ceilRem + 's';
+  }
+  
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const progress = Math.max(0, remaining / total);
+  const offset = circumference * (1 - progress);
+  
+  circleEl.style.strokeDashoffset = offset;
+  
+  // 最后3秒变红
+  if (remaining < 3) {
+    circleEl.style.stroke = '#ef4444';
+  } else {
+    circleEl.style.stroke = '#3b82f6';
+  }
+}
+
+function finishAll() {
+  isRunning = false;
+  if (animationFrameId) cancelAnimationFrame(animationFrameId);
+  
+  // 清空网格
+  document.getElementById('grid').innerHTML = '';
+  document.getElementById('finishNotice').style.display = 'block';
+  document.getElementById('strategyInfo').innerText = '';
+}
+
+// 初始化
+updateTotalDisplay();
+
+</script>
 </body>
 </html>
+
+
