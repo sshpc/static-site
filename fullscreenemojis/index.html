@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全屏表情包 - EmojiStorm</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a1a;--card:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);
+  --accent:#6c5ce7;--accent2:#a29bfe;--pink:#fd79a8;--cyan:#00cec9;--gold:#fdcb6e;
+}
+body{background:var(--bg);font-family:'Noto Sans SC','Segoe UI',sans-serif;color:#eee;overflow:hidden}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:3px}
+
+/* ===== HOME SCREEN ===== */
+#home{
+  position:fixed;inset:0;z-index:2000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:var(--bg);
+  transition:opacity .6s,transform .6s;
+}
+#home.hidden{opacity:0;pointer-events:none;transform:scale(1.05)}
+.home-bg{
+  position:absolute;inset:0;overflow:hidden;
+}
+.home-bg .orb{
+  position:absolute;border-radius:50%;filter:blur(100px);opacity:.35;
+  animation:orbFloat 8s ease-in-out infinite alternate;
+}
+.home-bg .orb:nth-child(1){width:500px;height:500px;background:#6c5ce7;top:-10%;left:-5%;animation-delay:0s}
+.home-bg .orb:nth-child(2){width:400px;height:400px;background:#fd79a8;bottom:-10%;right:-5%;animation-delay:2s}
+.home-bg .orb:nth-child(3){width:300px;height:300px;background:#00cec9;top:40%;left:50%;animation-delay:4s}
+@keyframes orbFloat{
+  0%{transform:translate(0,0) scale(1)}
+  100%{transform:translate(40px,-30px) scale(1.15)}
+}
+.home-content{position:relative;z-index:1;text-align:center;max-width:680px;padding:20px}
+.home-logo{font-size:72px;margin-bottom:8px;filter:drop-shadow(0 0 30px rgba(108,92,231,.5))}
+.home-title{
+  font-size:48px;font-weight:900;
+  background:linear-gradient(135deg,#a29bfe,#fd79a8,#fdcb6e);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  letter-spacing:2px;margin-bottom:12px;
+}
+.home-sub{font-size:18px;color:rgba(255,255,255,.55);line-height:1.7;margin-bottom:36px;font-weight:300}
+.home-sub span{color:var(--accent2);font-weight:400}
+
+.home-upload-zone{
+  width:100%;max-width:480px;margin:0 auto 28px;
+  border:2px dashed rgba(108,92,231,.35);border-radius:20px;
+  padding:36px 24px;cursor:pointer;
+  background:rgba(108,92,231,.06);
+  transition:all .3s;position:relative;
+}
+.home-upload-zone:hover,.home-upload-zone.dragover{
+  border-color:var(--accent);background:rgba(108,92,231,.12);
+  transform:translateY(-2px);box-shadow:0 8px 40px rgba(108,92,231,.15);
+}
+.home-upload-zone input{display:none}
+.home-upload-icon{font-size:48px;margin-bottom:10px;display:block}
+.home-upload-text{font-size:15px;color:rgba(255,255,255,.6)}
+.home-upload-hint{font-size:12px;color:rgba(255,255,255,.3);margin-top:6px}
+
+.home-preview{
+  display:flex;flex-wrap:wrap;gap:8px;justify-content:center;
+  margin-bottom:28px;max-height:80px;overflow:hidden;
+}
+.home-preview img{
+  width:48px;height:48px;object-fit:cover;border-radius:10px;
+  border:2px solid rgba(108,92,231,.3);cursor:pointer;transition:.2s;
+}
+.home-preview img:hover{transform:scale(1.1);border-color:var(--accent2)}
+.home-preview img.selected{border-color:var(--pink);box-shadow:0 0 12px rgba(255,121,168,.3)}
+.home-preview .count-badge{
+  display:flex;align-items:center;justify-content:center;
+  width:48px;height:48px;border-radius:10px;
+  background:rgba(108,92,231,.15);border:2px solid rgba(108,92,231,.3);
+  font-size:13px;color:var(--accent2);
+}
+
+.home-controls{
+  display:flex;align-items:center;gap:20px;justify-content:center;
+  flex-wrap:wrap;margin-bottom:20px;
+}
+.home-ctrl-group{display:flex;align-items:center;gap:8px}
+.home-ctrl-label{font-size:13px;color:rgba(255,255,255,.5);white-space:nowrap}
+.home-ctrl-val{
+  min-width:32px;text-align:center;font-size:15px;font-weight:700;color:var(--accent2);
+}
+.home-slider{
+  -webkit-appearance:none;width:140px;height:4px;border-radius:2px;
+  background:rgba(255,255,255,.1);outline:none;
+}
+.home-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--pink));cursor:pointer;
+  box-shadow:0 0 10px rgba(108,92,231,.4);
+}
+
+.home-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.home-btn{
+  padding:14px 36px;border-radius:14px;font-size:16px;font-weight:700;
+  cursor:pointer;border:none;transition:all .3s;letter-spacing:1px;
+}
+.home-btn:active{transform:scale(.96)}
+.home-btn-start{
+  background:linear-gradient(135deg,var(--accent),#a29bfe);color:#fff;
+  box-shadow:0 4px 24px rgba(108,92,231,.35);
+}
+.home-btn-start:hover{box-shadow:0 6px 32px rgba(108,92,231,.5);transform:translateY(-2px)}
+.home-btn-chaos{
+  background:linear-gradient(135deg,#e17055,var(--pink));color:#fff;
+  box-shadow:0 4px 24px rgba(253,121,168,.3);
+}
+.home-btn-chaos:hover{box-shadow:0 6px 32px rgba(253,121,168,.45);transform:translateY(-2px)}
+.home-btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+
+.home-footer{
+  position:absolute;bottom:20px;left:0;right:0;text-align:center;
+  font-size:12px;color:rgba(255,255,255,.2);
+}
+.home-footer kbd{
+  background:rgba(255,255,255,.08);padding:2px 6px;border-radius:4px;
+  font-size:11px;border:1px solid rgba(255,255,255,.1);
+}
+
+/* ===== STAGE ===== */
+#stage{width:100vw;height:100vh;position:relative;overflow:hidden}
+#stage .emoji-item{position:absolute;user-select:none;pointer-events:none}
+
+/* ===== SIDEBAR ===== */
+#sidebar{
+  position:fixed;top:0;right:-400px;width:400px;height:100vh;
+  background:rgba(12,12,30,.96);backdrop-filter:blur(20px);
+  z-index:1000;overflow-y:auto;
+  transition:right .35s cubic-bezier(.4,0,.2,1);
+  border-left:1px solid var(--border);
+  display:flex;flex-direction:column;
+}
+#sidebar.open{right:0}
+.sb-toggle{
+  position:fixed;top:16px;right:16px;z-index:1001;
+  width:44px;height:44px;border-radius:12px;border:1px solid var(--border);
+  background:rgba(255,255,255,.06);backdrop-filter:blur(10px);
+  color:#fff;font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:.2s;
+}
+.sb-toggle:hover{background:rgba(255,255,255,.12)}
+.sb-header{
+  padding:24px 24px 16px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.sb-title{font-size:16px;font-weight:700;color:var(--accent2)}
+.sb-home-btn{
+  padding:6px 14px;border-radius:8px;font-size:12px;
+  background:rgba(108,92,231,.15);border:1px solid rgba(108,92,231,.25);
+  color:var(--accent2);cursor:pointer;transition:.2s;
+}
+.sb-home-btn:hover{background:rgba(108,92,231,.25)}
+.sb-body{flex:1;padding:20px 24px;overflow-y:auto}
+.sb-section{margin-bottom:22px}
+.sb-section-title{
+  font-size:12px;font-weight:700;color:rgba(255,255,255,.35);
+  text-transform:uppercase;letter-spacing:2px;margin-bottom:12px;
+}
+.sb-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.sb-label{font-size:13px;color:rgba(255,255,255,.6);min-width:36px}
+.sb-val{
+  min-width:36px;text-align:right;font-size:14px;font-weight:700;color:var(--accent2);
+}
+.sb-range{
+  flex:1;-webkit-appearance:none;height:4px;border-radius:2px;
+  background:rgba(255,255,255,.08);outline:none;
+}
+.sb-range::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--accent);cursor:pointer;box-shadow:0 0 8px rgba(108,92,231,.3);
+}
+.sb-btn-grid{display:flex;flex-wrap:wrap;gap:6px}
+.sb-btn{
+  padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;
+  background:rgba(255,255,255,.05);border:1px solid var(--border);
+  color:rgba(255,255,255,.6);cursor:pointer;transition:.2s;
+}
+.sb-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+.sb-btn.active{
+  background:rgba(108,92,231,.2);border-color:rgba(108,92,231,.4);color:var(--accent2);
+}
+.sb-btn.pink{background:rgba(253,121,168,.1);border-color:rgba(253,121,168,.25);color:var(--pink)}
+.sb-btn.pink:hover{background:rgba(253,121,168,.2)}
+.sb-btn.pink.active{background:rgba(253,121,168,.25);border-color:var(--pink)}
+.sb-btn.danger{background:rgba(255,80,80,.08);border-color:rgba(255,80,80,.2);color:#ff6b6b}
+.sb-btn.danger:hover{background:rgba(255,80,80,.15)}
+.sb-btn.full{width:100%;text-align:center}
+.sb-divider{height:1px;background:var(--border);margin:16px 0}
+
+.sb-upload{
+  border:2px dashed rgba(108,92,231,.25);border-radius:14px;
+  padding:18px;text-align:center;cursor:pointer;transition:.3s;
+  background:rgba(108,92,231,.04);
+}
+.sb-upload:hover{border-color:var(--accent);background:rgba(108,92,231,.08)}
+.sb-upload input{display:none}
+.sb-upload p{font-size:13px;color:rgba(255,255,255,.45)}
+.sb-preview{
+  display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;
+  max-height:80px;overflow-y:auto;
+}
+.sb-preview img{
+  width:36px;height:36px;object-fit:cover;border-radius:8px;
+  border:2px solid transparent;cursor:pointer;transition:.15s;
+}
+.sb-preview img.selected{border-color:var(--pink)}
+.sb-preview img:hover{opacity:.7}
+
+.sb-timer-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sb-timer-input{
+  width:56px;background:rgba(255,255,255,.06);border:1px solid var(--border);
+  color:#fff;padding:5px 8px;border-radius:6px;font-size:13px;text-align:center;
+}
+.sb-timer-input:focus{outline:none;border-color:var(--accent)}
+
+/* counter */
+#counter{
+  position:fixed;bottom:14px;right:20px;z-index:999;
+  font-size:12px;color:rgba(255,255,255,.25);
+}
+/* back to home floating */
+#back-home{
+  position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;
+  padding:6px 18px;border-radius:20px;font-size:12px;
+  background:rgba(255,255,255,.06);border:1px solid var(--border);
+  color:rgba(255,255,255,.3);cursor:pointer;backdrop-filter:blur(8px);
+  transition:.2s;display:none;
+}
+#back-home:hover{background:rgba(255,255,255,.1);color:rgba(255,255,255,.6)}
+body.in-stage #back-home{display:block}
+</style>
+</head>
+<body>
+
+<!-- ===== HOME ===== -->
+<div id="home">
+  <div class="home-bg">
+    <div class="orb"></div><div class="orb"></div><div class="orb"></div>
+  </div>
+  <div class="home-content">
+    <div class="home-logo">🎭</div>
+    <h1 class="home-title">EmojiStorm</h1>
+    <p class="home-sub">
+      上传你的表情包，让它们<span>占领整个屏幕</span><br>
+      支持自由调节数量、大小、旋转、动画，更有<span>一锅粥</span>模式<br>
+      让表情包在屏幕上疯狂乱飞
+    </p>
+
+    <div class="home-upload-zone" id="home-upload">
+      <input type="file" id="home-file" multiple accept="image/*">
+      <span class="home-upload-icon">📁</span>
+      <div class="home-upload-text">点击上传 或 拖拽图片到这里</div>
+      <div class="home-upload-hint">支持多选 · 粘贴 Ctrl+V · PNG / JPG / GIF / WebP</div>
+    </div>
+
+    <div class="home-preview" id="home-preview"></div>
+
+    <div class="home-controls">
+      <div class="home-ctrl-group">
+        <span class="home-ctrl-label">列</span>
+        <input type="range" class="home-slider" id="home-cols" min="1" max="20" value="3">
+        <span class="home-ctrl-val" id="home-cols-v">3</span>
+      </div>
+      <div class="home-ctrl-group">
+        <span class="home-ctrl-label">行</span>
+        <input type="range" class="home-slider" id="home-rows" min="1" max="20" value="3">
+        <span class="home-ctrl-val" id="home-rows-v">3</span>
+      </div>
+    </div>
+
+    <div class="home-actions">
+      <button class="home-btn home-btn-start" id="home-start" disabled>开始展示</button>
+      <button class="home-btn home-btn-chaos" id="home-chaos" disabled>🔥 一锅粥</button>
+    </div>
+  </div>
+  <div class="home-footer">
+    快捷键 <kbd>Esc</kbd> 回到首页 · <kbd>S</kbd> 打开设置 · <kbd>Space</kbd> 一锅粥
+  </div>
+</div>
+
+<!-- ===== STAGE ===== -->
+<button class="sb-toggle" id="sb-toggle">⚙</button>
+<button id="back-home">← 回到首页</button>
+<div id="stage"></div>
+<div id="counter"></div>
+
+<!-- ===== SIDEBAR ===== -->
+<div id="sidebar">
+  <div class="sb-header">
+    <span class="sb-title">⚙ 高级设置</span>
+    <button class="sb-home-btn" id="sb-home-btn">← 首页</button>
+  </div>
+  <div class="sb-body">
+    <div class="sb-section">
+      <div class="sb-section-title">表情管理</div>
+      <div class="sb-upload" id="sb-upload">
+        <input type="file" id="sb-file" multiple accept="image/*">
+        <p>📁 点击 / 拖拽添加更多表情</p>
+      </div>
+      <div class="sb-preview" id="sb-preview"></div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-section-title">网格布局</div>
+      <div class="sb-row">
+        <span class="sb-label">列数</span>
+        <input type="range" class="sb-range" id="sb-cols" min="1" max="30" value="3">
+        <span class="sb-val" id="sb-cols-v">3</span>
+      </div>
+      <div class="sb-row">
+        <span class="sb-label">行数</span>
+        <input type="range" class="sb-range" id="sb-rows" min="1" max="30" value="3">
+        <span class="sb-val" id="sb-rows-v">3</span>
+      </div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-section-title">外观</div>
+      <div class="sb-row">
+        <span class="sb-label">大小</span>
+        <input type="range" class="sb-range" id="sb-size" min="10" max="400" value="100">
+        <span class="sb-val" id="sb-size-v">100%</span>
+      </div>
+      <div class="sb-row">
+        <span class="sb-label">旋转</span>
+        <input type="range" class="sb-range" id="sb-rot" min="0" max="360" value="0">
+        <span class="sb-val" id="sb-rot-v">0°</span>
+      </div>
+      <div class="sb-btn-grid">
+        <span class="sb-btn" data-rot="0">不旋转</span>
+        <span class="sb-btn" data-rot="random">随机旋转</span>
+        <span class="sb-btn" data-rot="360spin">360° 自转</span>
+      </div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-section-title">动画效果</div>
+      <div class="sb-btn-grid" id="sb-anim-btns">
+        <span class="sb-btn active" data-anim="none">无</span>
+        <span class="sb-btn" data-anim="bounce">弹跳</span>
+        <span class="sb-btn" data-anim="drift">漂移</span>
+        <span class="sb-btn" data-anim="spin">自转</span>
+        <span class="sb-btn" data-anim="scale">缩放</span>
+        <span class="sb-btn pink" data-anim="chaos">🔥 一锅粥</span>
+      </div>
+    </div>
+
+    <div class="sb-divider"></div>
+
+    <div class="sb-section">
+      <div class="sb-section-title">定时随机</div>
+      <div class="sb-timer-row">
+        <span class="sb-label">间隔</span>
+        <input type="number" class="sb-timer-input" id="sb-timer-sec" value="2" min="0.3" step="0.1">
+        <span class="sb-label">秒</span>
+      </div>
+      <div class="sb-btn-grid" id="sb-timer-targets">
+        <span class="sb-btn" data-tt="rows">行数</span>
+        <span class="sb-btn" data-tt="cols">列数</span>
+        <span class="sb-btn" data-tt="size">大小</span>
+        <span class="sb-btn" data-tt="rotation">旋转</span>
+        <span class="sb-btn" data-tt="anim">动画</span>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <span class="sb-btn full" id="sb-timer-toggle">▶ 启动定时</span>
+      </div>
+      <div style="margin-top:6px">
+        <span class="sb-btn full pink" id="sb-chaos-all">🔥 一键一锅粥</span>
+      </div>
+    </div>
+
+    <div class="sb-divider"></div>
+    <span class="sb-btn full danger" id="sb-clear">🗑 清空画布</span>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const $$ = s => document.querySelectorAll(s);
+
+  // State
+  let images = [];
+  let selectedImages = [];
+  let currentAnim = 'none';
+  let animFrame = null;
+  let emojiElements = [];
+  let timerHandle = null;
+  let timerTargets = new Set();
+  let isOnStage = false;
+
+  // DOM refs
+  const home = $('#home');
+  const stage = $('#stage');
+  const sidebar = $('#sidebar');
+  const counter = $('#counter');
+
+  // Home elements
+  const homeUpload = $('#home-upload');
+  const homeFile = $('#home-file');
+  const homePreview = $('#home-preview');
+  const homeCols = $('#home-cols');
+  const homeRows = $('#home-rows');
+  const homeStart = $('#home-start');
+  const homeChaos = $('#home-chaos');
+
+  // Sidebar elements
+  const sbUpload = $('#sb-upload');
+  const sbFile = $('#sb-file');
+  const sbPreview = $('#sb-preview');
+  const sbCols = $('#sb-cols');
+  const sbRows = $('#sb-rows');
+  const sbSize = $('#sb-size');
+  const sbRot = $('#sb-rot');
+
+  // ===== Upload handling =====
+  function setupUpload(zone, input) {
+    zone.addEventListener('click', () => input.click());
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+    input.addEventListener('change', () => { handleFiles(input.files); input.value = ''; });
+  }
+  setupUpload(homeUpload, homeFile);
+  setupUpload(sbUpload, sbFile);
+
+  document.addEventListener('paste', e => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    const files = [];
+    for (const item of items) if (item.type.startsWith('image/')) files.push(item.getAsFile());
+    if (files.length) handleFiles(files);
+  });
+
+  function handleFiles(fileList) {
+    for (const file of fileList) {
+      if (!file.type.startsWith('image/')) continue;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const url = e.target.result;
+        images.push(url);
+        selectedImages.push(url);
+        addPreviewImage(url);
+        updateUI();
+        if (!isOnStage) syncSidebarSliders();
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function addPreviewImage(url) {
+    [homePreview, sbPreview].forEach(container => {
+      const img = document.createElement('img');
+      img.src = url; img.dataset.url = url;
+      img.addEventListener('click', () => toggleImage(url));
+      container.appendChild(img);
+    });
+  }
+
+  function toggleImage(url) {
+    const idx = selectedImages.indexOf(url);
+    if (idx >= 0) selectedImages.splice(idx, 1);
+    else selectedImages.push(url);
+    updateUI();
+    if (isOnStage) render();
+  }
+
+  function updateUI() {
+    [homePreview, sbPreview].forEach(c => {
+      c.querySelectorAll('img').forEach(img => {
+        img.classList.toggle('selected', selectedImages.includes(img.dataset.url));
+      });
+    });
+    const has = selectedImages.length > 0;
+    homeStart.disabled = !has;
+    homeChaos.disabled = !has;
+  }
+
+  function syncSidebarSliders() {
+    sbCols.value = homeCols.value;
+    sbRows.value = homeRows.value;
+    $('#sb-cols-v').textContent = homeCols.value;
+    $('#sb-rows-v').textContent = homeRows.value;
+  }
+
+  // Home sliders
+  homeCols.addEventListener('input', () => {
+    $('#home-cols-v').textContent = homeCols.value;
+    sbCols.value = homeCols.value;
+    $('#sb-cols-v').textContent = homeCols.value;
+  });
+  homeRows.addEventListener('input', () => {
+    $('#home-rows-v').textContent = homeRows.value;
+    sbRows.value = homeRows.value;
+    $('#sb-rows-v').textContent = homeRows.value;
+  });
+
+  // ===== Enter stage =====
+  function enterStage(chaos) {
+    if (selectedImages.length === 0) return;
+    isOnStage = true;
+    home.classList.add('hidden');
+    document.body.classList.add('in-stage');
+    if (chaos) activateChaosMode();
+    render();
+  }
+
+  homeStart.addEventListener('click', () => enterStage(false));
+  homeChaos.addEventListener('click', () => enterStage(true));
+
+  // Back to home
+  $('#back-home').addEventListener('click', goHome);
+  $('#sb-home-btn').addEventListener('click', goHome);
+  function goHome() {
+    isOnStage = false;
+    home.classList.remove('hidden');
+    document.body.classList.remove('in-stage');
+    sidebar.classList.remove('open');
+    stopTimer();
+    if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+    stage.innerHTML = '';
+    counter.textContent = '';
+    homeCols.value = sbCols.value;
+    homeRows.value = sbRows.value;
+    $('#home-cols-v').textContent = sbCols.value;
+    $('#home-rows-v').textContent = sbRows.value;
+  }
+
+  // Sidebar toggle
+  $('#sb-toggle').addEventListener('click', () => sidebar.classList.toggle('open'));
+
+  // Sidebar sliders
+  sbCols.addEventListener('input', () => {
+    $('#sb-cols-v').textContent = sbCols.value;
+    homeCols.value = sbCols.value;
+    $('#home-cols-v').textContent = sbCols.value;
+    if (isOnStage) render();
+  });
+  sbRows.addEventListener('input', () => {
+    $('#sb-rows-v').textContent = sbRows.value;
+    homeRows.value = sbRows.value;
+    $('#home-rows-v').textContent = sbRows.value;
+    if (isOnStage) render();
+  });
+  sbSize.addEventListener('input', () => {
+    $('#sb-size-v').textContent = sbSize.value + '%';
+    if (isOnStage) render();
+  });
+  sbRot.addEventListener('input', () => {
+    $('#sb-rot-v').textContent = sbRot.value + '°';
+    $$('.sb-btn[data-rot]').forEach(b => b.classList.remove('active'));
+    if (isOnStage) render();
+  });
+
+  // Rotation buttons
+  $$('.sb-btn[data-rot]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('.sb-btn[data-rot]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const v = btn.dataset.rot;
+      if (v === 'random') {
+        sbRot.value = 0; $('#sb-rot-v').textContent = '随机';
+        applyRandomRotation();
+      } else if (v === '360spin') {
+        sbRot.value = 0; $('#sb-rot-v').textContent = '360°';
+        if (currentAnim === 'none') { currentAnim = 'spin'; updateAnimBtns(); render(); }
+      } else {
+        sbRot.value = 0; $('#sb-rot-v').textContent = '0°';
+        if (isOnStage) render();
+      }
+    });
+  });
+
+  function applyRandomRotation() {
+    emojiElements.forEach(item => {
+      const r = Math.random() * 360;
+      item.rot = r;
+      item.el.style.transform = `rotate(${r}deg)`;
+    });
+  }
+
+  // Anim buttons
+  $$('#sb-anim-btns .sb-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentAnim = btn.dataset.anim;
+      updateAnimBtns();
+      if (isOnStage) render();
+    });
+  });
+  function updateAnimBtns() {
+    $$('#sb-anim-btns .sb-btn').forEach(b => b.classList.toggle('active', b.dataset.anim === currentAnim));
+  }
+
+  // Timer targets
+  $$('.sb-btn[data-tt]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const t = btn.dataset.tt;
+      if (timerTargets.has(t)) timerTargets.delete(t); else timerTargets.add(t);
+      btn.classList.toggle('active');
+    });
+  });
+
+  // Timer toggle
+  $('#sb-timer-toggle').addEventListener('click', () => {
+    if (timerHandle) stopTimer();
+    else startTimer();
+  });
+
+  function startTimer() {
+    if (timerTargets.size === 0) {
+      ['size','rotation'].forEach(t => { timerTargets.add(t); });
+      $$('.sb-btn[data-tt]').forEach(b => {
+        if (['size','rotation'].includes(b.dataset.tt)) b.classList.add('active');
+      });
+    }
+    const sec = Math.max(parseFloat($('#sb-timer-sec').value) * 1000, 200);
+    timerHandle = setInterval(timerTick, sec);
+    $('#sb-timer-toggle').textContent = '⏸ 停止定时';
+    $('#sb-timer-toggle').classList.add('active');
+  }
+
+  function stopTimer() {
+    if (timerHandle) clearInterval(timerHandle);
+    timerHandle = null;
+    $('#sb-timer-toggle').textContent = '▶ 启动定时';
+    $('#sb-timer-toggle').classList.remove('active');
+  }
+
+  function timerTick() {
+    for (const t of timerTargets) {
+      switch (t) {
+        case 'rows':
+          sbRows.value = Math.floor(Math.random() * 15) + 2;
+          $('#sb-rows-v').textContent = sbRows.value;
+          homeRows.value = sbRows.value; $('#home-rows-v').textContent = sbRows.value;
+          break;
+        case 'cols':
+          sbCols.value = Math.floor(Math.random() * 15) + 2;
+          $('#sb-cols-v').textContent = sbCols.value;
+          homeCols.value = sbCols.value; $('#home-cols-v').textContent = sbCols.value;
+          break;
+        case 'size':
+          sbSize.value = Math.floor(Math.random() * 250) + 30;
+          $('#sb-size-v').textContent = sbSize.value + '%';
+          break;
+        case 'rotation':
+          sbRot.value = Math.floor(Math.random() * 360);
+          $('#sb-rot-v').textContent = sbRot.value + '°';
+          break;
+        case 'anim':
+          currentAnim = getRandomItem(['none','bounce','drift','spin','scale','chaos']);
+          updateAnimBtns();
+          break;
+      }
+    }
+    if (isOnStage) render();
+  }
+
+  // Chaos mode
+  function activateChaosMode() {
+    timerTargets = new Set(['rows','cols','size','rotation','anim']);
+    $$('.sb-btn[data-tt]').forEach(b => b.classList.add('active'));
+    currentAnim = 'chaos';
+    updateAnimBtns();
+    stopTimer();
+    const sec = Math.max(parseFloat($('#sb-timer-sec').value) * 1000, 200);
+    timerHandle = setInterval(timerTick, sec);
+    $('#sb-timer-toggle').textContent = '⏸ 停止定时';
+    $('#sb-timer-toggle').classList.add('active');
+    timerTick();
+  }
+
+  $('#sb-chaos-all').addEventListener('click', () => {
+    if (!isOnStage) enterStage(true);
+    else activateChaosMode();
+  });
+
+  // Clear
+  $('#sb-clear').addEventListener('click', () => {
+    selectedImages = []; images = [];
+    homePreview.innerHTML = ''; sbPreview.innerHTML = '';
+    stopTimer(); currentAnim = 'none'; updateAnimBtns();
+    updateUI(); render();
+  });
+
+  // ===== Keyboard shortcuts =====
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'Escape') goHome();
+    if (e.key === 's' || e.key === 'S') sidebar.classList.toggle('open');
+    if (e.key === ' ') { e.preventDefault(); if (isOnStage) activateChaosMode(); }
+  });
+
+  // ===== Render =====
+  function getRandomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function render() {
+    if (animFrame) cancelAnimationFrame(animFrame);
+    animFrame = null;
+    stage.innerHTML = '';
+    emojiElements = [];
+
+    if (selectedImages.length === 0) { counter.textContent = ''; return; }
+
+    const cols = parseInt(sbCols.value);
+    const rows = parseInt(sbRows.value);
+    const baseSize = parseInt(sbSize.value);
+    const rotation = parseInt(sbRot.value) || 0;
+
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const cellW = vw / cols;
+    const cellH = vh / rows;
+    const imgSize = Math.min(cellW, cellH) * (baseSize / 100) * 0.8;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const el = document.createElement('img');
+        el.className = 'emoji-item';
+        el.src = getRandomItem(selectedImages);
+        el.style.width = imgSize + 'px';
+        el.style.height = imgSize + 'px';
+
+        const cx = cellW * c + cellW / 2;
+        const cy = cellH * r + cellH / 2;
+
+        el.style.left = (cx - imgSize / 2) + 'px';
+        el.style.top = (cy - imgSize / 2) + 'px';
+        el.style.transform = `rotate(${rotation}deg)`;
+
+        stage.appendChild(el);
+        emojiElements.push({
+          el, cx, cy, baseSize: imgSize,
+          x: cx - imgSize / 2, y: cy - imgSize / 2,
+          rot: rotation, phase: Math.random() * Math.PI * 2,
+          speedX: (Math.random() - 0.5) * 3,
+          speedY: (Math.random() - 0.5) * 3,
+          spinSpeed: (Math.random() - 0.5) * 6,
+          scalePhase: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    counter.textContent = `${rows} × ${cols} = ${rows * cols} 个表情`;
+    if (currentAnim !== 'none') startAnimation();
+  }
+
+  function startAnimation() {
+    if (animFrame) cancelAnimationFrame(animFrame);
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    let lastTime = performance.now();
+
+    function tick(now) {
+      const dt = Math.min((now - lastTime) / 16.67, 3);
+      lastTime = now;
+
+      for (const item of emojiElements) {
+        const { el, cx, cy, baseSize, phase } = item;
+        let ox = 0, oy = 0, rot = item.rot, scale = 1;
+
+        switch (currentAnim) {
+          case 'bounce':
+            oy = Math.abs(Math.sin(now / 400 + phase)) * -50;
+            break;
+          case 'drift':
+            item.x += item.speedX * dt;
+            item.y += item.speedY * dt;
+            if (item.x < -baseSize) item.x = vw;
+            if (item.x > vw) item.x = -baseSize;
+            if (item.y < -baseSize) item.y = vh;
+            if (item.y > vh) item.y = -baseSize;
+            el.style.left = item.x + 'px';
+            el.style.top = item.y + 'px';
+            break;
+          case 'spin':
+            rot = (now / 5 * item.spinSpeed) % 360;
+            break;
+          case 'scale':
+            scale = 0.5 + 0.5 * Math.sin(now / 500 + item.scalePhase);
+            break;
+          case 'chaos':
+            item.x += item.speedX * dt * 1.5;
+            item.y += item.speedY * dt * 1.5;
+            if (item.x < -baseSize) { item.x = vw; item.speedY = (Math.random() - 0.5) * 4; }
+            if (item.x > vw) { item.x = -baseSize; item.speedY = (Math.random() - 0.5) * 4; }
+            if (item.y < -baseSize) { item.y = vh; item.speedX = (Math.random() - 0.5) * 4; }
+            if (item.y > vh) { item.y = -baseSize; item.speedX = (Math.random() - 0.5) * 4; }
+            el.style.left = item.x + 'px';
+            el.style.top = item.y + 'px';
+            rot = (now / 3 * item.spinSpeed) % 360;
+            scale = 0.3 + 0.9 * Math.abs(Math.sin(now / 600 + item.scalePhase));
+            break;
+        }
+
+        if (currentAnim !== 'drift' && currentAnim !== 'chaos') {
+          el.style.left = (cx - baseSize / 2 + ox) + 'px';
+          el.style.top = (cy - baseSize / 2 + oy) + 'px';
+        }
+        el.style.transform = `rotate(${rot}deg) scale(${scale})`;
+      }
+      animFrame = requestAnimationFrame(tick);
+    }
+    animFrame = requestAnimationFrame(tick);
+  }
+
+  window.addEventListener('resize', () => { if (isOnStage) render(); });
+})();
+</script>
+</body>
+</html>
