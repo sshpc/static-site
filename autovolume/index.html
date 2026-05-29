@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoVolume - 智能音量调节</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #fafafa;
+            color: #1a1a2e;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            text-decoration: none;
+        }
+
+        .nav-brand svg {
+            width: 26px;
+            height: 26px;
+            color: #6366f1;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 28px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #1a1a2e;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 70px 0 40px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 18px;
+            background: #eef2ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 100px;
+            font-size: 0.82rem;
+            color: #4f46e5;
+            font-weight: 600;
+            margin-bottom: 28px;
+        }
+
+        .hero h1 {
+            font-size: 3.2rem;
+            font-weight: 800;
+            color: #111827;
+            line-height: 1.15;
+            margin-bottom: 18px;
+            letter-spacing: -0.5px;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-desc {
+            font-size: 1.15rem;
+            color: #6b7280;
+            max-width: 520px;
+            margin: 0 auto 44px;
+            line-height: 1.7;
+        }
+
+        .cta-group {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 34px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #4f46e5;
+            color: #fff;
+            box-shadow: 0 1px 3px rgba(79, 70, 229, 0.3), 0 4px 16px rgba(79, 70, 229, 0.15);
+        }
+
+        .btn-primary:hover {
+            background: #4338ca;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35), 0 8px 24px rgba(79, 70, 229, 0.2);
+        }
+
+        .btn-secondary {
+            background: #fff;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+
+        .btn-secondary:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .hero-image {
+            margin: 56px auto 0;
+            max-width: 700px;
+        }
+
+        .phone-mockup {
+            width: 260px;
+            height: 520px;
+            background: #fff;
+            border-radius: 32px;
+            border: 2px solid #e5e7eb;
+            position: relative;
+            overflow: hidden;
+            margin: 0 auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.03);
+        }
+
+        .phone-notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 110px;
+            height: 26px;
+            background: #f3f4f6;
+            border-radius: 0 0 16px 16px;
+        }
+
+        .phone-screen {
+            position: absolute;
+            top: 38px;
+            left: 14px;
+            right: 14px;
+            bottom: 14px;
+            background: linear-gradient(180deg, #f8fafc, #eef2ff);
+            border-radius: 22px;
+            padding: 20px 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .app-header {
+            text-align: center;
+            margin-bottom: 4px;
+        }
+
+        .app-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+        }
+
+        .app-header h3 {
+            color: #111827;
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .app-header p {
+            color: #9ca3af;
+            font-size: 0.65rem;
+            margin-top: 1px;
+        }
+
+        .mock-card {
+            width: 100%;
+            background: #fff;
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .mock-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mock-toggle span {
+            font-size: 0.72rem;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .toggle-switch {
+            width: 38px;
+            height: 20px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            top: 2px;
+            right: 2px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        }
+
+        .db-meter {
+            width: 100%;
+            text-align: center;
+        }
+
+        .db-value {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .db-label {
+            font-size: 0.6rem;
+            color: #9ca3af;
+            margin-top: 1px;
+        }
+
+        .db-bars {
+            display: flex;
+            gap: 3px;
+            justify-content: center;
+            margin-top: 8px;
+        }
+
+        .db-bar {
+            width: 5px;
+            border-radius: 3px;
+            background: #e5e7eb;
+        }
+
+        .db-bar.active {
+            background: linear-gradient(180deg, #8b5cf6, #6366f1);
+        }
+
+        .mock-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.65rem;
+            color: #22c55e;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .stats {
+            padding: 40px 0;
+        }
+
+        .stats-grid {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #111827;
+        }
+
+        .stat-value span {
+            color: #6366f1;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+
+        .features {
+            padding: 60px 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .section-header h2 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 10px;
+        }
+
+        .section-header p {
+            color: #9ca3af;
+            font-size: 1rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .feature-card {
+            background: #fff;
+            border: 1px solid #f3f4f6;
+            border-radius: 16px;
+            padding: 28px 22px;
+            transition: all 0.25s ease;
+        }
+
+        .feature-card:hover {
+            border-color: #e0e7ff;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.06);
+            transform: translateY(-3px);
+        }
+
+        .feature-icon {
+            width: 44px;
+            height: 44px;
+            background: #eef2ff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 18px;
+        }
+
+        .feature-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 6px;
+        }
+
+        .feature-card p {
+            font-size: 0.85rem;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        .how-it-works {
+            padding: 60px 0;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            margin-top: 48px;
+        }
+
+        .step {
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 48px;
+            height: 48px;
+            background: #eef2ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 18px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #4f46e5;
+        }
+
+        .step h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+
+        .step p {
+            font-size: 0.85rem;
+            color: #6b7280;
+            line-height: 1.6;
+            max-width: 260px;
+            margin: 0 auto;
+        }
+
+        .faq {
+            padding: 60px 0;
+        }
+
+        .faq-list {
+            max-width: 680px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            border-bottom: 1px solid #f3f4f6;
+            padding: 20px 0;
+        }
+
+        .faq-item summary {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #111827;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .faq-item summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .faq-item summary::after {
+            content: '+';
+            font-size: 1.2rem;
+            color: #9ca3af;
+            transition: transform 0.2s;
+        }
+
+        .faq-item[open] summary::after {
+            content: '−';
+        }
+
+        .faq-item p {
+            margin-top: 12px;
+            font-size: 0.88rem;
+            color: #6b7280;
+            line-height: 1.7;
+        }
+
+        .bottom-cta {
+            text-align: center;
+            padding: 70px 0;
+        }
+
+        .bottom-cta h2 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 12px;
+        }
+
+        .bottom-cta p {
+            color: #9ca3af;
+            font-size: 1rem;
+            margin-bottom: 32px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 32px 0;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        footer p {
+            color: #9ca3af;
+            font-size: 0.82rem;
+        }
+
+        footer a {
+            color: #6366f1;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero-desc {
+                font-size: 1rem;
+            }
+
+            .features-grid,
+            .steps {
+                grid-template-columns: 1fr;
+            }
+
+            .cta-group {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 280px;
+                justify-content: center;
+            }
+
+            .stats-grid {
+                gap: 32px;
+            }
+
+            .phone-mockup {
+                width: 220px;
+                height: 440px;
+            }
+
+            .nav-links {
+                gap: 16px;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero {
+            animation: fadeInUp 0.7s ease-out;
+        }
+
+        .features-grid .feature-card:nth-child(1) { animation: fadeInUp 0.5s ease-out 0.1s both; }
+        .features-grid .feature-card:nth-child(2) { animation: fadeInUp 0.5s ease-out 0.2s both; }
+        .features-grid .feature-card:nth-child(3) { animation: fadeInUp 0.5s ease-out 0.3s both; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <a href="#" class="nav-brand">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                </svg>
+                AutoVolume
+            </a>
+            <div class="nav-links">
+                <a href="https://github.com/sshpc/autovolume" target="_blank">GitHub</a>
+                <a href="https://github.com/sshpc/autovolume/releases" target="_blank">下载</a>
+            </div>
+        </nav>
+
+        <section class="hero">
+            <div class="badge">Android · 开源免费</div>
+            <h1>智能感知环境<br><span>自动调节音量</span></h1>
+            <p class="hero-desc">根据环境噪音实时检测，自动调节媒体音量。嘈杂时自动调高，安静时自动调低，无需手动操作。</p>
+            <div class="cta-group">
+                <a href="https://github.com/sshpc/autovolume/releases" target="_blank" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    下载 APK
+                </a>
+                <a href="https://github.com/sshpc/autovolume" target="_blank" class="btn btn-secondary">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    项目地址
+                </a>
+            </div>
+
+            <div class="hero-image">
+                <div class="phone-mockup">
+                    <div class="phone-notch"></div>
+                    <div class="phone-screen">
+                        <div class="app-header">
+                            <div class="app-icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                            </div>
+                            <h3>AutoVolume</h3>
+                            <p>自动音量调节</p>
+                        </div>
+                        <div class="mock-card">
+                            <div class="mock-toggle">
+                                <span>自动音量调节</span>
+                                <div class="toggle-switch"></div>
+                            </div>
+                        </div>
+                        <div class="mock-card">
+                            <div class="db-meter">
+                                <div class="db-value">62 dB</div>
+                                <div class="db-label">环境噪音</div>
+                                <div class="db-bars">
+                                    <div class="db-bar active" style="height:8px"></div>
+                                    <div class="db-bar active" style="height:14px"></div>
+                                    <div class="db-bar active" style="height:22px"></div>
+                                    <div class="db-bar active" style="height:30px"></div>
+                                    <div class="db-bar active" style="height:38px"></div>
+                                    <div class="db-bar active" style="height:32px"></div>
+                                    <div class="db-bar active" style="height:26px"></div>
+                                    <div class="db-bar" style="height:20px"></div>
+                                    <div class="db-bar" style="height:16px"></div>
+                                    <div class="db-bar" style="height:12px"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mock-card">
+                            <div class="mock-toggle">
+                                <span>当前媒体音量</span>
+                                <span style="color:#6366f1;font-weight:700">75%</span>
+                            </div>
+                        </div>
+                        <div class="mock-status">
+                            <div class="status-dot"></div>
+                            运行中 · 平衡模式
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="stats">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value">Android <span>10</span>+</div>
+                    <div class="stat-label">最低支持版本</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><span>0</span> 广告</div>
+                    <div class="stat-label">纯净体验</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">100<span>%</span></div>
+                    <div class="stat-label">开源免费</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="features">
+            <div class="section-header">
+                <h2>功能特性</h2>
+                <p>简洁高效，专注于智能音量体验</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                    </div>
+                    <h3>实时噪音检测</h3>
+                    <p>通过麦克风采集环境声音，实时计算分贝值，精准感知周围噪音变化。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+                    </div>
+                    <h3>自动音量调节</h3>
+                    <p>根据噪音-音量映射曲线自动调节媒体音量，嘈杂环境自动增大，安静环境自动降低。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                    </div>
+                    <h3>智能节能</h3>
+                    <p>屏幕关闭时自动降低检测频率，有效节省电量，兼顾续航与功能。</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="how-it-works">
+            <div class="section-header">
+                <h2>使用方式</h2>
+                <p>安装即用，无需复杂配置</p>
+            </div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>安装并打开</h3>
+                    <p>下载安装 APK，首次启动授予录音和通知权限。</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>连接耳机</h3>
+                    <p>连接蓝牙耳机或有线耳机，开启自动音量调节开关。</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>自动运行</h3>
+                    <p>选择运行模式，应用将根据环境噪音自动调节音量。</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="faq">
+            <div class="section-header">
+                <h2>常见问题</h2>
+            </div>
+            <div class="faq-list">
+                <details class="faq-item">
+                    <summary>需要联网吗？</summary>
+                    <p>不需要。AutoVolume 完全离线运行，所有音频处理均在本地完成，不上传任何数据。</p>
+                </details>
+                <details class="faq-item">
+                    <summary>耗电量大吗？</summary>
+                    <p>应用内置智能节能模式，屏幕关闭时自动降低检测频率，对电量影响极小。建议关闭电池优化以确保后台稳定运行。</p>
+                </details>
+                <details class="faq-item">
+                    <summary>支持哪些设备？</summary>
+                    <p>支持 Android 10 及以上版本的所有设备。部分国产手机需要手动允许自启动和后台运行权限。</p>
+                </details>
+                <details class="faq-item">
+                    <summary>完全免费吗？</summary>
+                    <p>是的，AutoVolume 100% 开源免费，无广告、无跟踪、无隐藏费用。</p>
+                </details>
+            </div>
+        </section>
+
+        <section class="bottom-cta">
+            <h2>立即体验智能音量</h2>
+            <p>告别手动调节，让音量随环境自动变化。</p>
+            <div class="cta-group">
+                <a href="https://github.com/sshpc/autovolume/releases" target="_blank" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    下载 APK
+                </a>
+                <a href="https://github.com/sshpc/autovolume" target="_blank" class="btn btn-secondary">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    项目地址
+                </a>
+            </div>
+        </section>
+
+        <footer>
+            <p>AutoVolume &mdash; 开源项目 · <a href="https://github.com/sshpc/autovolume" target="_blank">GitHub</a> · <a href="https://github.com/sshpc/autovolume/releases" target="_blank">Releases</a></p>
+        </footer>
+    </div>
+</body>
+</html>
