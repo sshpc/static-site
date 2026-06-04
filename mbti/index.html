@@ -1,0 +1,1060 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MBTI 合拍分析工具</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #162028;
+        --muted: #66717c;
+        --line: #dde5ea;
+        --paper: #f7fafb;
+        --panel: #ffffff;
+        --teal: #0f766e;
+        --teal-soft: #d9f2ed;
+        --rose: #be3455;
+        --rose-soft: #fae4ea;
+        --gold: #a46313;
+        --gold-soft: #fff0d2;
+        --blue: #2563eb;
+        --blue-soft: #dfeaff;
+        --green: #18874f;
+        --shadow: 0 18px 50px rgba(25, 40, 54, 0.11);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        background:
+          linear-gradient(135deg, rgba(217, 242, 237, 0.75), rgba(255, 240, 210, 0.45) 42%, rgba(250, 228, 234, 0.45)),
+          var(--paper);
+        font-family:
+          Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      button,
+      select {
+        font: inherit;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 28px 0 18px;
+      }
+
+      .eyebrow {
+        margin: 0 0 5px;
+        color: var(--teal);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(28px, 4vw, 48px);
+        line-height: 1.05;
+        letter-spacing: 0;
+      }
+
+      h2 {
+        font-size: 18px;
+        line-height: 1.2;
+      }
+
+      .top-actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      .icon-button,
+      .tab {
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.86);
+        color: var(--ink);
+        cursor: pointer;
+        transition:
+          transform 160ms ease,
+          border-color 160ms ease,
+          background 160ms ease;
+      }
+
+      .icon-button:hover,
+      .tab:hover {
+        transform: translateY(-1px);
+        border-color: #b9c7cf;
+      }
+
+      .icon-button {
+        display: inline-grid;
+        width: 42px;
+        height: 42px;
+        place-items: center;
+        border-radius: 8px;
+      }
+
+      .icon-button svg,
+      .tab svg {
+        width: 19px;
+        height: 19px;
+        stroke-width: 2.2;
+      }
+
+      .icon-fallback {
+        color: var(--teal);
+        font-size: 14px;
+        font-weight: 900;
+      }
+
+      .icons-ready .icon-fallback {
+        display: none;
+      }
+
+      .shell {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto 36px;
+      }
+
+      .selector-grid,
+      .insight-grid,
+      .axis-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .panel {
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(216, 226, 232, 0.92);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+      }
+
+      .person-panel {
+        padding: 18px;
+      }
+
+      .panel-head {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        margin-bottom: 16px;
+      }
+
+      .panel-head p {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .person-mark {
+        display: grid;
+        width: 48px;
+        height: 48px;
+        flex: 0 0 auto;
+        place-items: center;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 900;
+      }
+
+      .person-mark.me {
+        color: #075f58;
+        background: var(--teal-soft);
+      }
+
+      .person-mark.other {
+        color: #972945;
+        background: var(--rose-soft);
+      }
+
+      .field {
+        display: grid;
+        gap: 7px;
+      }
+
+      .field span {
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      select {
+        width: 100%;
+        min-height: 46px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--ink);
+        padding: 0 12px;
+        outline: none;
+      }
+
+      select:focus {
+        border-color: var(--teal);
+        box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+      }
+
+      .type-pills {
+        display: grid;
+        grid-template-columns: repeat(8, minmax(0, 1fr));
+        gap: 7px;
+        margin-top: 14px;
+      }
+
+      .type-pill {
+        min-width: 0;
+        min-height: 34px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .type-pill.active {
+        border-color: var(--teal);
+        background: var(--teal-soft);
+        color: #075f58;
+      }
+
+      .score-band {
+        display: grid;
+        grid-template-columns: 220px minmax(280px, 380px) 1fr;
+        align-items: center;
+        gap: 18px;
+        margin: 14px 0;
+        padding: 20px;
+        border: 1px solid rgba(211, 221, 226, 0.96);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: var(--shadow);
+      }
+
+      .score-main {
+        display: grid;
+        gap: 5px;
+      }
+
+      .score-label {
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      #scoreValue {
+        color: var(--teal);
+        font-size: 72px;
+        line-height: 0.95;
+        letter-spacing: 0;
+      }
+
+      #scoreValue::after {
+        content: "%";
+        font-size: 24px;
+        margin-left: 3px;
+      }
+
+      #scoreTitle {
+        color: var(--gold);
+        font-size: 17px;
+        font-weight: 900;
+      }
+
+      .chart-wrap {
+        display: grid;
+        min-height: 250px;
+        place-items: center;
+      }
+
+      #radar {
+        width: 100%;
+        max-width: 360px;
+        height: auto;
+      }
+
+      .quick-read {
+        display: grid;
+        gap: 10px;
+      }
+
+      .quick-read h2 {
+        font-size: 28px;
+      }
+
+      .quick-read p {
+        color: #394752;
+        font-size: 16px;
+        line-height: 1.75;
+      }
+
+      .tabs {
+        display: inline-flex;
+        gap: 8px;
+        margin: 2px 0 14px;
+        padding: 6px;
+        border: 1px solid rgba(216, 226, 232, 0.9);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        min-height: 38px;
+        padding: 0 13px;
+        border-radius: 8px;
+        font-weight: 800;
+      }
+
+      .tab.active {
+        border-color: var(--teal);
+        background: var(--teal);
+        color: #fff;
+      }
+
+      .insight-card {
+        min-height: 174px;
+        padding: 18px;
+      }
+
+      .insight-card h3,
+      .axis-card h3 {
+        margin: 0 0 10px;
+        font-size: 16px;
+      }
+
+      .insight-card p,
+      .axis-card p {
+        color: #40505b;
+        font-size: 15px;
+        line-height: 1.7;
+      }
+
+      .tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin-top: 13px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 9px;
+        border-radius: 8px;
+        background: var(--blue-soft);
+        color: #1644a3;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .tag.warn {
+        background: var(--rose-soft);
+        color: #972945;
+      }
+
+      .tag.good {
+        background: var(--teal-soft);
+        color: #075f58;
+      }
+
+      .tag.gold {
+        background: var(--gold-soft);
+        color: #7a470b;
+      }
+
+      .comparison-section {
+        margin-top: 14px;
+      }
+
+      .section-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 10px;
+      }
+
+      .section-head p {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.5;
+        text-align: right;
+      }
+
+      .axis-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .axis-card {
+        padding: 16px;
+      }
+
+      .axis-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 13px;
+      }
+
+      .axis-code {
+        display: inline-flex;
+        min-width: 40px;
+        justify-content: center;
+        border-radius: 8px;
+        background: var(--gold-soft);
+        color: #7a470b;
+        padding: 6px 8px;
+        font-weight: 900;
+      }
+
+      .axis-match {
+        color: var(--green);
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      .axis-match.diff {
+        color: var(--rose);
+      }
+
+      footer {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto 28px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      @media (max-width: 900px) {
+        .score-band {
+          grid-template-columns: 1fr;
+        }
+
+        .chart-wrap {
+          min-height: 220px;
+        }
+
+        .axis-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 680px) {
+        .topbar {
+          align-items: flex-start;
+        }
+
+        .selector-grid,
+        .insight-grid,
+        .axis-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .type-pills {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .tabs {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          width: 100%;
+        }
+
+        .tab {
+          justify-content: center;
+          padding: 0 8px;
+        }
+
+        .section-head {
+          display: grid;
+        }
+
+        .section-head p {
+          text-align: left;
+        }
+
+        #scoreValue {
+          font-size: 62px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">MBTI Pair Lab</p>
+        <h1>MBTI 合拍分析工具</h1>
+      </div>
+      <div class="top-actions" aria-label="工具操作">
+        <button class="icon-button" id="swapBtn" type="button" aria-label="交换双方" title="交换双方">
+          <i data-lucide="repeat-2"></i>
+          <span class="icon-fallback">换</span>
+        </button>
+        <button class="icon-button" id="randomBtn" type="button" aria-label="随机组合" title="随机组合">
+          <i data-lucide="shuffle"></i>
+          <span class="icon-fallback">随</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section class="selector-grid" aria-label="MBTI 类型选择">
+        <article class="panel person-panel">
+          <div class="panel-head">
+            <span class="person-mark me">我</span>
+            <div>
+              <h2>我的类型</h2>
+              <p id="mySummary">INTJ · 策略型 · 独立推进</p>
+            </div>
+          </div>
+          <label class="field">
+            <span>MBTI</span>
+            <select id="myType"></select>
+          </label>
+          <div class="type-pills" id="myPills"></div>
+        </article>
+
+        <article class="panel person-panel">
+          <div class="panel-head">
+            <span class="person-mark other">TA</span>
+            <div>
+              <h2>对方类型</h2>
+              <p id="theirSummary">ENFP · 灵感型 · 热情连接</p>
+            </div>
+          </div>
+          <label class="field">
+            <span>MBTI</span>
+            <select id="theirType"></select>
+          </label>
+          <div class="type-pills" id="theirPills"></div>
+        </article>
+      </section>
+
+      <section class="score-band" aria-label="合拍度总览">
+        <div class="score-main">
+          <span class="score-label">综合合拍度</span>
+          <strong id="scoreValue">78</strong>
+          <span id="scoreTitle">高互补</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="radar" width="360" height="260" aria-label="五项合拍维度图"></canvas>
+        </div>
+        <div class="quick-read">
+          <h2 id="pairTitle">INTJ × ENFP</h2>
+          <p id="pairRead"></p>
+        </div>
+      </section>
+
+      <section class="tabs" aria-label="分析视角">
+        <button class="tab active" data-view="life" type="button">
+          <i data-lucide="home"></i>
+          <span>生活</span>
+        </button>
+        <button class="tab" data-view="work" type="button">
+          <i data-lucide="briefcase-business"></i>
+          <span>共事</span>
+        </button>
+        <button class="tab" data-view="talk" type="button">
+          <i data-lucide="messages-square"></i>
+          <span>沟通</span>
+        </button>
+      </section>
+
+      <section class="insight-grid" id="insights" aria-live="polite"></section>
+
+      <section class="comparison-section" aria-label="双方差异对比">
+        <div class="section-head">
+          <h2>四维对比</h2>
+          <p id="axisSummary"></p>
+        </div>
+        <div class="axis-grid" id="axisGrid"></div>
+      </section>
+    </main>
+
+    <footer>
+      MBTI 适合用来开启对话，不适合替代真实观察；高分不代表没有摩擦，低分也不代表不能磨合。
+    </footer>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script>
+      const TYPES = [
+        "INTJ",
+        "INTP",
+        "ENTJ",
+        "ENTP",
+        "INFJ",
+        "INFP",
+        "ENFJ",
+        "ENFP",
+        "ISTJ",
+        "ISFJ",
+        "ESTJ",
+        "ESFJ",
+        "ISTP",
+        "ISFP",
+        "ESTP",
+        "ESFP",
+      ];
+
+      const TYPE_META = {
+        INTJ: ["策划者", "长期布局", "独立推进"],
+        INTP: ["解析者", "概念拆解", "保持弹性"],
+        ENTJ: ["指挥者", "目标牵引", "快速决策"],
+        ENTP: ["辩论者", "创意试探", "打破惯性"],
+        INFJ: ["洞察者", "价值整合", "深度陪伴"],
+        INFP: ["理想者", "内在真实", "温和坚持"],
+        ENFJ: ["引导者", "关系协调", "激励他人"],
+        ENFP: ["探索者", "热情连接", "灵感流动"],
+        ISTJ: ["守序者", "稳定执行", "重视承诺"],
+        ISFJ: ["照料者", "细节支持", "安稳可靠"],
+        ESTJ: ["管理者", "规则推进", "结果导向"],
+        ESFJ: ["组织者", "氛围经营", "实际照顾"],
+        ISTP: ["工匠型", "冷静处理", "动手解决"],
+        ISFP: ["审美型", "当下感受", "柔和自洽"],
+        ESTP: ["行动者", "现场反应", "敢试敢改"],
+        ESFP: ["体验者", "快乐带动", "活在现场"],
+      };
+
+      const AXES = [
+        {
+          key: "energy",
+          letters: ["E", "I"],
+          title: "能量来源",
+          same: "社交充电方式接近，生活安排更容易同频。",
+          diff: "一个更外放，一个更内收，需要给彼此保留恢复空间。",
+        },
+        {
+          key: "info",
+          letters: ["S", "N"],
+          title: "信息偏好",
+          same: "看问题的颗粒度接近，讨论时少一些翻译成本。",
+          diff: "一个看现实细节，一个看趋势可能，需要把事实和想象接上。",
+        },
+        {
+          key: "decision",
+          letters: ["T", "F"],
+          title: "决策方式",
+          same: "判断标准更一致，做选择时容易认可彼此的理由。",
+          diff: "一个先看逻辑，一个先看感受，冲突时要同时承认两套依据。",
+        },
+        {
+          key: "rhythm",
+          letters: ["J", "P"],
+          title: "生活节奏",
+          same: "计划和弹性的需求接近，日常摩擦会更少。",
+          diff: "一个偏确定，一个偏开放，最好提前分清哪些事必须定下来。",
+        },
+      ];
+
+      const VIEW_COPY = {
+        life: {
+          titles: ["生活合拍", "容易摩擦", "相处建议", "适合的关系节奏"],
+          tags: ["日常", "亲密", "边界"],
+        },
+        work: {
+          titles: ["共事优势", "协作风险", "分工建议", "会议与推进方式"],
+          tags: ["目标", "执行", "反馈"],
+        },
+        talk: {
+          titles: ["沟通默契", "误解来源", "表达建议", "冲突修复"],
+          tags: ["表达", "倾听", "复盘"],
+        },
+      };
+
+      const myType = document.querySelector("#myType");
+      const theirType = document.querySelector("#theirType");
+      const myPills = document.querySelector("#myPills");
+      const theirPills = document.querySelector("#theirPills");
+      const insights = document.querySelector("#insights");
+      const axisGrid = document.querySelector("#axisGrid");
+      const canvas = document.querySelector("#radar");
+      const ctx = canvas.getContext("2d");
+
+      let activeView = "life";
+
+      function setup() {
+        populateSelect(myType);
+        populateSelect(theirType);
+        myType.value = "INTJ";
+        theirType.value = "ENFP";
+        renderPills(myPills, myType);
+        renderPills(theirPills, theirType);
+        bindEvents();
+        update();
+        if (window.lucide) {
+          window.lucide.createIcons();
+          document.body.classList.add("icons-ready");
+        }
+      }
+
+      function populateSelect(select) {
+        select.innerHTML = TYPES.map((type) => {
+          const [name, style] = TYPE_META[type];
+          return `<option value="${type}">${type} · ${name} · ${style}</option>`;
+        }).join("");
+      }
+
+      function renderPills(container, select) {
+        container.innerHTML = TYPES.map(
+          (type) => `<button class="type-pill" data-type="${type}" type="button">${type}</button>`,
+        ).join("");
+        container.addEventListener("click", (event) => {
+          const button = event.target.closest(".type-pill");
+          if (!button) return;
+          select.value = button.dataset.type;
+          update();
+        });
+      }
+
+      function bindEvents() {
+        myType.addEventListener("change", update);
+        theirType.addEventListener("change", update);
+
+        document.querySelector("#swapBtn").addEventListener("click", () => {
+          const previous = myType.value;
+          myType.value = theirType.value;
+          theirType.value = previous;
+          update();
+        });
+
+        document.querySelector("#randomBtn").addEventListener("click", () => {
+          myType.value = TYPES[Math.floor(Math.random() * TYPES.length)];
+          theirType.value = TYPES[Math.floor(Math.random() * TYPES.length)];
+          update();
+        });
+
+        document.querySelectorAll(".tab").forEach((tab) => {
+          tab.addEventListener("click", () => {
+            activeView = tab.dataset.view;
+            document.querySelectorAll(".tab").forEach((item) => item.classList.remove("active"));
+            tab.classList.add("active");
+            update();
+          });
+        });
+      }
+
+      function update() {
+        const mine = myType.value;
+        const theirs = theirType.value;
+        const result = analyzePair(mine, theirs);
+
+        document.querySelector("#mySummary").textContent = summarizeType(mine);
+        document.querySelector("#theirSummary").textContent = summarizeType(theirs);
+        document.querySelector("#scoreValue").textContent = result.score;
+        document.querySelector("#scoreTitle").textContent = result.level;
+        document.querySelector("#pairTitle").textContent = `${mine} × ${theirs}`;
+        document.querySelector("#pairRead").textContent = result.summary;
+        document.querySelector("#axisSummary").textContent = result.axisSummary;
+
+        syncPills(myPills, mine);
+        syncPills(theirPills, theirs);
+        renderInsights(mine, theirs, result);
+        renderAxes(mine, theirs);
+        drawRadar(result.metrics);
+      }
+
+      function summarizeType(type) {
+        const [name, style, action] = TYPE_META[type];
+        return `${type} · ${name} · ${style} · ${action}`;
+      }
+
+      function syncPills(container, value) {
+        container.querySelectorAll(".type-pill").forEach((pill) => {
+          pill.classList.toggle("active", pill.dataset.type === value);
+        });
+      }
+
+      function analyzePair(a, b) {
+        const comparisons = AXES.map((axis, index) => ({
+          ...axis,
+          a: a[index],
+          b: b[index],
+          match: a[index] === b[index],
+        }));
+        const sameCount = comparisons.filter((item) => item.match).length;
+        const oppositeCount = 4 - sameCount;
+        const temperamentA = temperament(a);
+        const temperamentB = temperament(b);
+        const bothIntuitive = a[1] === "N" && b[1] === "N";
+        const bothSensing = a[1] === "S" && b[1] === "S";
+        const rhythmSame = a[3] === b[3];
+        const decisionSame = a[2] === b[2];
+        const energyDiff = a[0] !== b[0];
+
+        let score = 52 + sameCount * 8 + oppositeCount * 3;
+        if (bothIntuitive || bothSensing) score += 6;
+        if (rhythmSame) score += 6;
+        if (decisionSame) score += 4;
+        if (energyDiff) score += 3;
+        if (temperamentA === temperamentB) score += 5;
+        if (a === b) score += 4;
+        score = Math.max(42, Math.min(96, score));
+
+        const metrics = {
+          "生活节奏": clampMetric(54 + (rhythmSame ? 30 : 10) + (energyDiff ? 2 : 7)),
+          "沟通默契": clampMetric(50 + sameCount * 8 + (decisionSame ? 8 : 0) + (bothIntuitive || bothSensing ? 8 : 0)),
+          "决策协同": clampMetric(48 + (decisionSame ? 30 : 11) + (rhythmSame ? 7 : 0)),
+          "冲突修复": clampMetric(52 + sameCount * 6 + (a[2] !== b[2] ? 8 : 3)),
+          "成长互补": clampMetric(58 + oppositeCount * 8 + (energyDiff ? 6 : 0)),
+        };
+
+        return {
+          score,
+          level: score >= 86 ? "非常合拍" : score >= 74 ? "高互补" : score >= 62 ? "可磨合" : "需要慢热",
+          metrics,
+          summary: buildSummary(a, b, sameCount, temperamentA, temperamentB),
+          axisSummary: `${sameCount} 项相同，${oppositeCount} 项互补；${axisTone(comparisons)}。`,
+          comparisons,
+        };
+      }
+
+      function temperament(type) {
+        const middle = type.slice(1, 3);
+        if (middle === "NT") return "理性策略型";
+        if (middle === "NF") return "价值理想型";
+        if (type[1] === "S" && type[3] === "J") return "稳定秩序型";
+        return "现场行动型";
+      }
+
+      function clampMetric(value) {
+        return Math.max(35, Math.min(96, value));
+      }
+
+      function axisTone(comparisons) {
+        const diff = comparisons.filter((item) => !item.match).map((item) => item.title);
+        if (!diff.length) return "你们很像，优势是省力，挑战是盲区也容易相同";
+        if (diff.length >= 3) return "你们差异明显，适合互补，但要把期待说清楚";
+        return `主要差异在${diff.join("、")}，处理好这里就会顺很多`;
+      }
+
+      function buildSummary(a, b, sameCount, ta, tb) {
+        if (a === b) {
+          return `两个 ${a} 很容易理解彼此的节奏和判断标准，关系推进省力。需要留意的是，双方可能会用同一种方式回避同一种问题。`;
+        }
+        if (sameCount >= 3) {
+          return `${a} 和 ${b} 的底层偏好很接近，${ta} 与 ${tb} 的配合通常稳定。相处重点不是改变对方，而是避免因为"我以为你懂"而省略沟通。`;
+        }
+        if (sameCount === 2) {
+          return `${a} 和 ${b} 有一半同频、一半互补，适合在生活里保留边界，在共事里明确角色。磨合到位时，会同时有熟悉感和新鲜感。`;
+        }
+        return `${a} 和 ${b} 的差异比较鲜明，吸引力常来自对方拥有自己欠缺的部分。真正的关键是节奏、情绪和决策标准要提前对齐。`;
+      }
+
+      function renderInsights(a, b, result) {
+        const copy = VIEW_COPY[activeView];
+        const cards = buildCards(a, b, result, activeView);
+        insights.innerHTML = cards
+          .map(
+            (card, index) => `
+              <article class="panel insight-card">
+                <h3>${copy.titles[index]}</h3>
+                <p>${card.text}</p>
+                <div class="tag-row">
+                  ${card.tags.map((tag) => `<span class="tag ${tag.kind}">${tag.label}</span>`).join("")}
+                </div>
+              </article>
+            `,
+          )
+          .join("");
+      }
+
+      function buildCards(a, b, result, view) {
+        const same = result.comparisons.filter((item) => item.match);
+        const diff = result.comparisons.filter((item) => !item.match);
+        const sameNames = same.map((item) => item.title).join("、") || "目标感";
+        const diffNames = diff.map((item) => item.title).join("、") || "表达深度";
+        const aMeta = TYPE_META[a];
+        const bMeta = TYPE_META[b];
+
+        const sharedTags = [
+          { label: result.level, kind: "good" },
+          { label: `${same.length} 项同频`, kind: "gold" },
+        ];
+
+        if (view === "work") {
+          return [
+            {
+              text: `${aMeta[0]}的${aMeta[1]}和${bMeta[0]}的${bMeta[1]}可以形成不错的推进力。${sameNames}一致时，目标、标准和复盘会更省力。`,
+              tags: [...sharedTags, { label: "项目推进", kind: "" }],
+            },
+            {
+              text: `风险集中在${diffNames}。一方可能觉得对方太慢、太跳、太硬或太顾虑人，需要把"谁拍板、何时反馈、什么算完成"写清楚。`,
+              tags: [{ label: "角色边界", kind: "warn" }, { label: "交付标准", kind: "" }],
+            },
+            {
+              text: `让更擅长结构的人负责拆任务，让更擅长变化的人负责发现机会。重大决策先列事实、约束、影响人群，再定下一步。`,
+              tags: [{ label: "分工", kind: "good" }, { label: "决策清单", kind: "gold" }],
+            },
+            {
+              text: `会议适合短结论加开放补充：先确认目标和截止时间，再留出异议窗口。${a} 与 ${b} 都需要被看见自己的贡献方式。`,
+              tags: [{ label: "会议", kind: "" }, { label: "反馈", kind: "good" }],
+            },
+          ];
+        }
+
+        if (view === "talk") {
+          return [
+            {
+              text: `你们的沟通默契取决于${sameNames}。同频处可以直接推进，不同处要翻译成对方听得懂的语言。`,
+              tags: [...sharedTags, { label: "理解成本", kind: "" }],
+            },
+            {
+              text: `误解多半来自${diffNames}。尤其当 T/F 或 J/P 不同时，一方讲解决方案，另一方可能在等情绪承接或选择空间。`,
+              tags: [{ label: "误解点", kind: "warn" }, { label: "语境", kind: "gold" }],
+            },
+            {
+              text: `表达时先说结论，再补动机；回应时先复述对方真正担心的事。这样能让理性和感受都不被挤掉。`,
+              tags: [{ label: "先复述", kind: "good" }, { label: "再判断", kind: "" }],
+            },
+            {
+              text: `冲突后不要只追究谁对谁错。更有效的是确认：触发点是什么、下次提前说什么、哪件事需要具体改变。`,
+              tags: [{ label: "修复", kind: "good" }, { label: "可执行", kind: "gold" }],
+            },
+          ];
+        }
+
+        return [
+          {
+            text: `${a} 和 ${b} 在${sameNames}上更容易自然贴合。日常里，一方给稳定感，另一方给新鲜视角，会让关系更有层次。`,
+            tags: [...sharedTags, { label: "生活节奏", kind: "" }],
+          },
+          {
+            text: `摩擦通常出现在${diffNames}。当期待没有说出口时，小事会变成"你怎么总是这样"的性格判断。`,
+            tags: [{ label: "期待管理", kind: "warn" }, { label: "小事先说", kind: "" }],
+          },
+          {
+            text: `把固定事项和自由空间分开：钱、时间、承诺提前定；兴趣、社交、休息允许差异。这样互补会变成资源，而不是拉扯。`,
+            tags: [{ label: "边界", kind: "good" }, { label: "弹性", kind: "gold" }],
+          },
+          {
+            text: `更适合的节奏是稳定联系加周期性更新。不要只凭默契猜对方状态，尤其在压力期，要把需求说成具体行为。`,
+            tags: [{ label: "稳定", kind: "good" }, { label: "压力期", kind: "warn" }],
+          },
+        ];
+      }
+
+      function renderAxes(a, b) {
+        axisGrid.innerHTML = AXES.map((axis, index) => {
+          const left = a[index];
+          const right = b[index];
+          const match = left === right;
+          return `
+            <article class="panel axis-card">
+              <div class="axis-top">
+                <span class="axis-code">${left}/${right}</span>
+                <span class="axis-match ${match ? "" : "diff"}">${match ? "同频" : "互补"}</span>
+              </div>
+              <h3>${axis.title}</h3>
+              <p>${match ? axis.same : axis.diff}</p>
+            </article>
+          `;
+        }).join("");
+      }
+
+      function drawRadar(metrics) {
+        const labels = Object.keys(metrics);
+        const values = Object.values(metrics);
+        const width = canvas.width;
+        const height = canvas.height;
+        const centerX = width / 2;
+        const centerY = height / 2 + 4;
+        const radius = 84;
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.lineWidth = 1;
+        ctx.font = "13px Microsoft YaHei, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        for (let ring = 1; ring <= 4; ring += 1) {
+          ctx.beginPath();
+          labels.forEach((_, index) => {
+            const point = polarPoint(centerX, centerY, (radius * ring) / 4, index, labels.length);
+            if (index === 0) ctx.moveTo(point.x, point.y);
+            else ctx.lineTo(point.x, point.y);
+          });
+          ctx.closePath();
+          ctx.strokeStyle = "rgba(22, 32, 40, 0.14)";
+          ctx.stroke();
+        }
+
+        labels.forEach((label, index) => {
+          const end = polarPoint(centerX, centerY, radius, index, labels.length);
+          const labelPoint = polarPoint(centerX, centerY, radius + 32, index, labels.length);
+          ctx.beginPath();
+          ctx.moveTo(centerX, centerY);
+          ctx.lineTo(end.x, end.y);
+          ctx.strokeStyle = "rgba(22, 32, 40, 0.12)";
+          ctx.stroke();
+          ctx.fillStyle = "#40505b";
+          wrapLabel(label, labelPoint.x, labelPoint.y);
+        });
+
+        ctx.beginPath();
+        values.forEach((value, index) => {
+          const point = polarPoint(centerX, centerY, radius * (value / 100), index, labels.length);
+          if (index === 0) ctx.moveTo(point.x, point.y);
+          else ctx.lineTo(point.x, point.y);
+        });
+        ctx.closePath();
+        ctx.fillStyle = "rgba(15, 118, 110, 0.23)";
+        ctx.strokeStyle = "#0f766e";
+        ctx.lineWidth = 3;
+        ctx.fill();
+        ctx.stroke();
+
+        values.forEach((value, index) => {
+          const point = polarPoint(centerX, centerY, radius * (value / 100), index, labels.length);
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+          ctx.fillStyle = index % 2 ? "#be3455" : "#0f766e";
+          ctx.fill();
+        });
+      }
+
+      function polarPoint(cx, cy, r, index, total) {
+        const angle = -Math.PI / 2 + (Math.PI * 2 * index) / total;
+        return {
+          x: cx + Math.cos(angle) * r,
+          y: cy + Math.sin(angle) * r,
+        };
+      }
+
+      function wrapLabel(label, x, y) {
+        if (label.length <= 4) {
+          ctx.fillText(label, x, y);
+          return;
+        }
+        ctx.fillText(label.slice(0, 2), x, y - 7);
+        ctx.fillText(label.slice(2), x, y + 9);
+      }
+
+      setup();
+    </script>
+  </body>
+</html>
